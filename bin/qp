@@ -1,0 +1,100 @@
+#!/usr/bin/env ruby
+#
+# Quickpress main executable
+
+require 'gli'
+include GLI::App
+
+require 'quickpress'
+
+begin
+  program_desc 'Control your Wordpress site on the commandline'
+  version Quickpress::VERSION
+
+  desc "Force actions, don't ask for confirmation"
+  switch [:f,:force]
+
+#  ___   ___   __  _____
+# | |_) / / \ ( (`  | |
+# |_|   \_\_/ _)_)  |_|
+
+  desc 'Posts into your site'
+  long_desc <<LONG_DESC
+Yeah baby
+LONG_DESC
+  arg_name '-n (filename)'
+  command :post do |post|
+
+    post.desc "Show all posts, arranged by date"
+    post.command :list do |list|
+      list.action do
+        puts "Listing posts."
+      end
+    end
+
+    post.desc "Deletes post by `id`"
+    post.command :delete do |delete|
+      delete.action do
+        puts "Deleting posts."
+      end
+    end
+
+    post.action do |global_options,options,args|
+      Quickpress::post "test.md"
+    end
+  end
+
+#  _     _   __  _____
+# | |   | | ( (`  | |
+# |_|__ |_| _)_)  |_|
+
+  desc 'Describe list here'
+  arg_name 'Describe arguments to list here'
+  command :list do |c|
+    c.action do |global_options,options,args|
+      puts "list command ran"
+    end
+  end
+
+#  ___   ____  _     ____ _____  ____
+# | | \ | |_  | |   | |_   | |  | |_
+# |_|_/ |_|__ |_|__ |_|__  |_|  |_|__
+
+  desc 'Describe delete here'
+  arg_name 'Describe arguments to delete here'
+  command :delete do |c|
+    c.action do |global_options,options,args|
+      puts "delete command ran"
+    end
+  end
+
+#  _      _   __   __
+# | |\/| | | ( (` / /`
+# |_|  | |_| _)_) \_\_, .
+
+  pre do |global,command,options,args|
+    # Pre logic here
+    # Return true to proceed; false to abort and not call the
+    # chosen command
+    # Use skips_pre before a command to skip this block
+    # on that command only
+    true
+  end
+
+  post do |global,command,options,args|
+    # Post logic here
+    # Use skips_post before a command to skip this
+    # block on that command only
+  end
+
+  on_error do |exception|
+    # Error logic here
+    # return false to skip default error handling
+    true
+  end
+
+  # Running the main loop, based on the commands
+  # set previously.
+  exit run(ARGV)
+end
+

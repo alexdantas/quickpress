@@ -1,0 +1,24 @@
+# Files starting with 'NOPE' are a way for me
+# to ignore files that I'm still converting from
+# old CDK style to current RNDK format.
+NOPE*
+
+# "regular" files to ignore
+*.gem
+*.rbc
+.bundle
+.config
+.yardoc
+Gemfile.lock
+InstalledFiles
+_yardoc
+coverage
+doc/
+lib/bundler/man
+pkg
+rdoc
+spec/reports
+test/tmp
+test/version_tmp
+tmp
+
