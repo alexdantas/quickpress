@@ -16,6 +16,7 @@ class QP < Thor
        'Posts FILENAME or create new post on your Wordpress site')
 
   method_option 'markup', :banner => "markup language", :aliases => "-m"
+
   long_desc(<<-END)
     If FILENAME is given, will post it to your Wordpress site.
 
@@ -27,6 +28,7 @@ class QP < Thor
   END
   def new_post(filename=nil)
     $options[:markup] = options[:markup]
+
     Quickpress::new(:post, filename)
   end
 
@@ -62,6 +64,7 @@ class QP < Thor
        'Creates page FILENAME or write new page on your Wordpress site')
 
   method_option 'markup', :banner => "markup language", :aliases => "-m"
+
   long_desc <<-END
     If FILENAME is given, will send it as a page to your Wordpress site.
 
@@ -73,11 +76,13 @@ class QP < Thor
   END
   def new_page(filename=nil)
     $options[:markup] = options[:markup]
+
     Quickpress::new(:page, filename)
   end
 
   # list-page
   desc 'list-pages [COUNT]', 'Shows last COUNT pages from Wordpress site'
+
   long_desc <<-END
     If COUNT is given, will show last COUNT pages from Wordpress site.
 
@@ -102,6 +107,7 @@ class QP < Thor
   end
 end
 
+# Press Start
 begin
   if ARGV.empty?
     puts <<-END.gsub(/^ +/, "")

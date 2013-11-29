@@ -2,8 +2,6 @@ require 'rubypress'
 
 module Quickpress
 
-  VERY_LARGE_NUMBER = 2**31 - 1
-
   # Handles calls to the Wordpress API
   #
   class Wordpress
@@ -19,6 +17,10 @@ module Quickpress
     # All categories on blog
     attr_reader :categories
 
+    # Yes it is
+    VERY_LARGE_NUMBER = 2**31 - 1
+
+    # Creates a new connection to `url` with `user`/`pass`.
     def initialize(url, user, pass)
 
       # Sanitizing url:
@@ -56,21 +58,11 @@ module Quickpress
       end
     end
 
-    # Posts something on the site.
-    #
-    # Options allowed:
-    # * title
-    # * keywords
-    # * categories
-    # * description
-    # * created_at
-    # * id
-    # * user_id
-    # * published
-    #
+    # Sends a post/page to the Wordpress site.
     def post options
       id   = @client.newPost(:content => options)
       link = @client.getPost(:post_id => id, :fields => [:link])["link"]
+
       return id, link
     end
 
@@ -116,10 +108,6 @@ module Quickpress
                            :post_type => 'page'
                          })
     end
-
-    # def post_edit(id, config)
-    #   post = @client.posts.find id
-    # end
 
   end
 end

@@ -7,16 +7,27 @@ require 'quickpress/wordpress'
 require 'quickpress/cli'
 require 'quickpress/options'
 
+# Controls all operations we can make.
+#
+# This module's a mess.
+#
+# The code sucks, things are not splitted well...
+# There should be delegation up the ass but I couldn't stop
+# coding.
+#
+# Gotta study ruby guidelines and see other librarys' codes
+# to see where I can improve.
+#
 module Quickpress
 
   # Main directory where we store everything.
-  ROOT_DIR  = File.expand_path "~/.config/quickpress"
+  ROOT_DIR    = File.expand_path "~/.config/quickpress"
 
-  POST_DIR  = "#{ROOT_DIR}/posts"
-  DRAFT_DIR = "#{ROOT_DIR}/drafts"
+  POST_DIR    = "#{ROOT_DIR}/posts"
+  DRAFT_DIR   = "#{ROOT_DIR}/drafts"
   CONFIG_FILE = "#{ROOT_DIR}/config.yml"
 
-  @@inited       = nil
+  @@inited = nil
 
   # URL of the default site used to post.
   @@default_site = nil
@@ -24,38 +35,41 @@ module Quickpress
   # Nice name of the default site.
   @@default_sitename = nil
 
-  @@username     = nil
-  @@password     = nil
-  @@connection   = nil
+  @@username   = nil
+  @@password   = nil
+  @@connection = nil
 
   module_function
 
   # Loads default site from configuration file
   def config_init
+    CLI::with_status("Initializing...") do
 
-    # Assuring default directories
-    [ROOT_DIR, POST_DIR, DRAFT_DIR].each do |dir|
-      FileUtils.mkdir dir if not File.exists? dir
+      # Assuring default directories
+      [ROOT_DIR, POST_DIR, DRAFT_DIR].each do |dir|
+        FileUtils.mkdir dir if not File.exists? dir
+      end
+
+      # Reading config file if exists
+      if File.exists? CONFIG_FILE
+        raw = File.read CONFIG_FILE
+        settings = YAML.load raw
+        settings = {} if not settings
+
+        @@default_site = settings["default_site"]
+        @@default_sitename =
+          @@default_site.gsub(/htt(p|ps):\/\//, "").gsub(/\//, '-')
+      end
+
+      @@inited = true
     end
-
-    # Reading config file if exists
-    if File.exists? CONFIG_FILE
-      raw = File.read CONFIG_FILE
-      settings = YAML.load raw
-      settings = {} if not settings
-
-      @@default_site = settings["default_site"]
-      @@default_sitename =
-        @@default_site.gsub(/htt(p|ps):\/\//, "").gsub(/\//, '-')
-
-    # # Creating blank one if don't
-    # else
-    #   File.write(CONFIG_FILE, "---")
-    end
-
-    @@inited = true
   end
 
+  # Executes at the first time, when there's no configuration
+  # directories.
+  #
+  # Asks stuff.
+  #
   def first_time
     puts <<-END.gsub(/^ +/, "")
       Hello!
@@ -288,25 +302,6 @@ module Quickpress
     end
   end
 
-  # Entrance for when we're creating a page stuff.
-  def new_page(filename=nil)
-    startup
-
-    if filename.nil?
-      # open editor
-      # filename = tmp file
-      #Quickpress::new_page_file filename
-      #FileUtils.mv to final dir
-    else
-      new_page_file filename
-      #FileUtils.cp final dir
-    end
-  end
-
-  def new_page_file filename
-
-  end
-
   # Show last `ammount` of posts/pages in reverse order of
   # publication.
   #
@@ -343,37 +338,17 @@ module Quickpress
   # Initializes everything based on the config file or
   # simply by asking the user.
   def startup
-    print "Initializing..."
-    config_init if @@inited.nil?
-
-    # if not internet_connection?
-    #   fail <<-END.gsub(/^ +/, "")
-    #     * It seems there's an issue with your internet connection.
-    #       Check your settings and try again.
-    #   END
-    # end
-    CLI::clear_line
-
     first_time if @@default_site.nil?
 
     puts "Using '#{@@default_site}'"
 
-    @@username   ||= CLI::get("Username:")
-    @@password   ||= CLI::get_secret("Password:")
+    @@username ||= CLI::get("Username:")
+    @@password ||= CLI::get_secret("Password:")
 
-    print "Connecting..."
-    @@connection ||= Wordpress.new(@@default_site, @@username, @@password)
-    CLI::clear_line
-  end
-
-  # Tells if there's a internet connection available.
-  # Thanks, 'http://stackoverflow.com/a/8317838'
-  def internet_connection?
-    begin
-      true if open('http://www.google.com/')
-    rescue
-      false
+    CLI::with_status("Connecting...") do
+      @@connection ||= Wordpress.new(@@default_site, @@username, @@password)
     end
   end
+
 end
 
