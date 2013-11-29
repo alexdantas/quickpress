@@ -1,14 +1,11 @@
-require 'quickpress/version'
-require 'quickpress/post'
-
-# Add requires for other files you add to your project here, so
-# you just need to require this one file in your bin file
-
-require 'quickpress/wordpress'
 require 'fileutils'
 require 'yaml'
 require 'open-uri'
-require 'io/console' # ruby 1.9.3 above
+require 'tilt'
+require 'quickpress/version'
+require 'quickpress/wordpress'
+require 'quickpress/cli'
+require 'quickpress/options'
 
 module Quickpress
 
@@ -20,7 +17,13 @@ module Quickpress
   CONFIG_FILE = "#{ROOT_DIR}/config.yml"
 
   @@inited       = nil
+
+  # URL of the default site used to post.
   @@default_site = nil
+
+  # Nice name of the default site.
+  @@default_sitename = nil
+
   @@username     = nil
   @@password     = nil
   @@connection   = nil
@@ -28,7 +31,7 @@ module Quickpress
   module_function
 
   # Loads default site from configuration file
-  def init
+  def config_init
 
     # Assuring default directories
     [ROOT_DIR, POST_DIR, DRAFT_DIR].each do |dir|
@@ -42,194 +45,335 @@ module Quickpress
       settings = {} if not settings
 
       @@default_site = settings["default_site"]
+      @@default_sitename =
+        @@default_site.gsub(/htt(p|ps):\/\//, "").gsub(/\//, '-')
 
-    else
-      File.write(CONFIG_FILE, "---")
+    # # Creating blank one if don't
+    # else
+    #   File.write(CONFIG_FILE, "---")
     end
 
     @@inited = true
   end
 
-  def get prompt
-    print "#{prompt} "
+  def first_time
+    puts <<-END.gsub(/^ +/, "")
+      Hello!
+      It looks like this is the first time you're running quickpress.
+      Let's connect to your Wordpress(.com/.org) site.
+    END
 
-    ret = ""
-    ret = gets.lstrip.strip while ret.empty?
-    ret
-  end
-
-  def get_secret prompt
-    ret = ""
-
-    $stdin.noecho { ret = get(prompt) }
-    puts
-    ret
-  end
-
-  def ask prompt
-    print "#{prompt} (Y/n) "
-
-    ans = gets.lstrip.strip
-    return true if ans.empty?
-
-    ['y', 'Y'].include? ans
-  end
-
-  def ask_for_site
-    puts "It looks like the first time you're running quickpress."
-    puts "Let's connect to your Wordpress site."
-
+    # If retrying, go back here.
     begin
       puts
-      address = get("Address:")
+      address = CLI::get "Address:"
 
-      ask_for_user_pass
+      @@username   = CLI::get("Username:")
+      @@password   = CLI::get_secret("Password:")
       @@connection = Wordpress.new(address, @@username, @@password)
-      puts <<END
 
-Title:   #{@@connection.title}
-Tagline: #{@@connection.tagline}
-Url:     #{@@connection.url}
-END
-      answer = ask("Is that right?")
+      puts <<-END.gsub(/^ +/, "")
+
+        Title:   #{@@connection.title}
+        Tagline: #{@@connection.tagline}
+        Url:     #{@@connection.url}
+      END
+
+      answer = CLI::ask "Is that right?"
       fail "will retry" if not answer
 
       @@default_site = address
 
-      # Saving to config file
+      # For a @@default_site like "http://myblog.com/this/dir"
+      #
+      # The @@default_sitename must be "myblog.com-this-dir"
+      @@default_sitename =
+        address.gsub(/htt(p|ps):\/\//, "").gsub(/\//, '-')
+
+      FileUtils.mkdir_p "#{DRAFT_DIR}/#{@@default_sitename}"
+      FileUtils.mkdir_p "#{POST_DIR}/#{@@default_sitename}"
+
+      # Saving to config file, taking care not
+      # to overwrite already-existing settings.
+
+      settings = {}
+
       if File.exists? CONFIG_FILE
         raw = File.read CONFIG_FILE
-        settings = YAML.load raw
-        settings = {} if not settings
 
-        settings["sites"] = [] if settings["sites"].nil?
-        settings["sites"] << @@default_site
-
-        settings["default_site"] = @@default_site
-
-        File.write(CONFIG_FILE, YAML.dump(settings))
+        settings.merge(YAML.load(raw))
       end
 
-    rescue ArgumentError => arg
-      if arg.message =~ /Wrong protocol specified/
-        $stderr.puts <<END
-* Wrong protocol at Wordpress site.
-  Please use `http` or `https`.
-END
-        retry if ask "Wanna retry?"
-        exit 2
-      end
+      settings["sites"] ||= []
+      settings["sites"] << @@default_site
 
-      #   rescue Wordpressto::Error => err
-      #     if err.message =~ /Incorrect username or password/
-      #       $stderr.puts <<END
-      # * Wrong username or password to '#{address}'
-      # END
-      #       retry if ask "Wanna retry?"
-      #       exit 2
-      #     end
+      settings["default_site"] = @@default_site
 
-    rescue => e
-      if e.message =~ /Wrong content-type/
-        $stderr.puts <<END
-* This doesn't seem to be a Wordpress site.
-  Check the address again.
-END
-        retry if ask "Wanna retry?"
-        exit 2
+      File.write(CONFIG_FILE, YAML.dump(settings))
 
-      elsif e.message =~ /will retry/
-        retry
-      end
+    rescue StandardError => e
+      retry if e.message =~ /will retry/
 
-      puts e
-      puts e.message
-      retry if ask "Wanna retry?"
-      exit 2
+      raise e
     end
   end
 
-  def ask_for_user_pass
-    @@username = get("Username:")
-    @@password = get_secret("Password:")
+  # Entrance for when we're creating a page or a post
+  # (`what` says so).
+  #
+  def new(what, filename=nil)
+    startup
+
+    if filename.nil?
+      # Get editor to open temporary file
+      editor = ENV["EDITOR"]
+      if editor.nil?
+        editor = get("Which text editor we'll use?")
+      end
+
+      extension = ""
+      case $options[:markup]
+      when "markdown"     then extension = '.md'
+      when "asciidoc"     then extension = '.adoc'
+      when "erb"          then extension = '.erb'
+      when "string"       then extension = '.str'
+      when "erubis"       then extension = '.erubis'
+      when "haml"         then extension = '.haml'
+      when "sass"         then extension = '.sass'
+      when "scss"         then extension = '.scss'
+      when "less"         then extension = '.less'
+      when "builder"      then extension = '.builder'
+      when "liquid"       then extension = '.liquid'
+      when "markdown"     then extension = '.md'
+      when "textile"      then extension = '.textile'
+      when "rdoc"         then extension = '.rdoc'
+      when "radius"       then extension = '.radius'
+      when "markaby"      then extension = '.mab'
+      when "nokogiri"     then extension = '.nokogiri'
+      when "coffeescript" then extension = '.coffee'
+      when "creole"       then extension = '.creole'
+      when "mediawiki"    then extension = 'mw'
+      when "yajl"         then extension = '.yajl'
+      when "csv"          then extension = '.rcsv'
+      else fail "Unknown markup laguage '#{$options[:markup]}'"
+      end
+
+      # Create sample file
+      template = Time.now.strftime "%Y-%m-%d[%H:%M]#{extension}"
+
+      # as in 'page-xxx' or 'post-xxx'
+      template = "#{what}-#{template}"
+
+      draft = "#{DRAFT_DIR}/#{@@default_sitename}/#{template}"
+      final = "#{POST_DIR}/#{@@default_sitename}/#{template}"
+
+      # Oh yeah, baby
+      `#{editor} #{draft}`
+
+      new_file(what, draft)
+
+      FileUtils.mv(draft, final)
+
+    else
+      # Post file and copy it to posted directory.
+      new_file(what, filename)
+
+      time  = Time.now.strftime "%Y-%m-%d[%H:%M]"
+      final = "#{POST_DIR}/#{@@default_sitename}/#{time}-#{File.basename(filename)}"
+
+      FileUtils.cp(filename, final)
+    end
   end
 
-  def post filename
-    self.init if @@inited.nil?
+  # Actually sends post/page `filename` to the blog.
+  def new_file(what, filename)
 
-    if not internet_connection?
-      fail <<END
-# * It seems there's an issue with the internet connection.
-  Check your settings and try again.
-END
+    html = Tilt.new(filename).render
+
+    title = CLI::get "Title:"
+
+    if what == :post
+      puts <<-END.gsub(/^ +/, "")
+      Existing blog categories:
+      #{@@connection.categories.each { |c| puts "* #{c}" }}
+      Use a comma-separated list (example: 'cat1, cat2, cat3')
+      Will create non-existing categories automatically.
+
+    END
+      categories = CLI::tab_complete("Post categories:", @@connection.categories)
+
+      cats = []
+      categories.split(',').each { |c| cats << c.lstrip.strip }
+
+      print "Posting..."
+      id, link = @@connection.post(:post_status  => 'publish',
+                                   :post_date    => Time.now,
+                                   :post_title   => title,
+                                   :post_content => html,
+                                   :terms_names  => {
+                                     :category => cats
+                                   })
+      CLI::clear_line
+      puts "Post successful!"
+
+    elsif what == :page
+      print "Creating page..."
+      id, link = @@connection.post(:post_status  => 'publish',
+                                   :post_date    => Time.now,
+                                   :post_title   => title,
+                                   :post_content => html,
+                                   :post_type    => 'page')
+      CLI::clear_line
+      puts "Page created!"
     end
 
-    ask_for_site      if @@default_site.nil?
-    ask_for_user_pass if @@username.nil? or @@password.nil?
-
-    if @@connection.nil?
-      @@connection = Wordpress.new(@@default_site,
-                                   @@username,
-                                   @@password)
-    end
-
-    post = Post.new filename
-
-    title = get("Post title:")
-
-    puts "Blog categories:"
-    @@connection.categories.each { |c| puts c }
-    puts
-    puts "Use a comma-separated list (example: 'cat1, cat2, cat3')"
-    categories = get("Post categories:")
-
-    cats = []
-    categories.split(',').each { |c| cats << c.lstrip.strip }
-
-    id, link = @@connection.post(:content => {
-                                   :post_status => "published",
-                                   :post_date => Time.now,
-                                   :post_title => title,
-                                   :post_content => post.html
-                                 },
-                                 :terms_names => {
-                                   :category => cats
-                                 })
-    puts <<END
-Post successful!
-id:   #{id}
-link: #{link}
-END
+    puts <<-END.gsub(/^ +/, "")
+      id:   #{id}
+      link: #{link}
+    END
 
   rescue => e
-    $stderr.puts <<END
-#{e.message}
-END
+    $stderr.puts e.message
     exit 2
   end
 
-  def post_new
+  # Deletes comma-separated list of posts/pages with `ids`.
+  # A single number is ok too.
+  def delete(what, ids)
+    startup
+
+    ids.split(',').each do |id|
+
+      print "Hold on a sec..."
+      thing = nil
+      if what == :post
+        thing = @@connection.get_post id.to_i
+      elsif what == :page
+        thing = @@connection.get_page id.to_i
+      end
+
+      CLI::clear_line
+
+      if what == :post
+        puts "Will delete the following post:"
+      elsif what == :page
+        puts "Will delete the following page:"
+      end
+
+      puts <<-END.gsub(/^ +/, "")
+
+        ID:      #{thing["post_id"]}
+        Title:   #{thing["post_title"]}
+        Date:    #{thing["post_date"].to_time}
+        Status:  #{thing["post_status"]}
+        URL:     #{thing["link"]}
+
+      END
+
+      if not $options[:force]
+        answer = CLI::ask("Is that right?")
+        if not answer
+          puts "Alright, then!"
+          next
+        end
+      end
+
+      CLI::with_status("Deleting...") do
+        if what == :post
+          @@connection.delete_post id.to_i
+        elsif what == :page
+          @@connection.delete_page id.to_i
+        end
+      end
+    end
+  end
+
+  # Entrance for when we're creating a page stuff.
+  def new_page(filename=nil)
+    startup
+
+    if filename.nil?
+      # open editor
+      # filename = tmp file
+      #Quickpress::new_page_file filename
+      #FileUtils.mv to final dir
+    else
+      new_page_file filename
+      #FileUtils.cp final dir
+    end
+  end
+
+  def new_page_file filename
 
   end
 
-  def post_edit
+  # Show last `ammount` of posts/pages in reverse order of
+  # publication.
+  #
+  def list(what, ammount)
+    startup
 
+    elements = nil
+    if what == :post
+      CLI::with_status("Retrieving posts...") do
+        elements = @@connection.get_posts ammount
+      end
+    elsif what == :page
+      CLI::with_status("Retrieving pages...") do
+        elements = @@connection.get_pages ammount
+      end
+    end
+
+    # Ugly as fuark :(
+    puts "+-----+---------------------------------------+-----------------------+--------+"
+    puts "|   ID|Title                                  |Date                   |Status  |"
+    puts "+-----+---------------------------------------+-----------------------+--------+"
+    elements.each do |post|
+      puts sprintf("|%5d|%-39s|%s|%-8s|", post["post_id"].to_i,
+                   post["post_title"],
+                   post["post_date"].to_time,
+                   post["post_status"])
+    end
+    puts "+-----+---------------------------------------+-----------------------+--------+"
   end
 
-  def post_list
+  private
+  module_function
 
+  # Initializes everything based on the config file or
+  # simply by asking the user.
+  def startup
+    print "Initializing..."
+    config_init if @@inited.nil?
+
+    # if not internet_connection?
+    #   fail <<-END.gsub(/^ +/, "")
+    #     * It seems there's an issue with your internet connection.
+    #       Check your settings and try again.
+    #   END
+    # end
+    CLI::clear_line
+
+    first_time if @@default_site.nil?
+
+    puts "Using '#{@@default_site}'"
+
+    @@username   ||= CLI::get("Username:")
+    @@password   ||= CLI::get_secret("Password:")
+
+    print "Connecting..."
+    @@connection ||= Wordpress.new(@@default_site, @@username, @@password)
+    CLI::clear_line
   end
 
   # Tells if there's a internet connection available.
+  # Thanks, 'http://stackoverflow.com/a/8317838'
   def internet_connection?
     begin
-      true if open('http://www.google.com/',
-                   "r",
-                   :read_timeout => 2)
+      true if open('http://www.google.com/')
     rescue
       false
     end
   end
-
 end
 
