@@ -297,6 +297,8 @@ begin
 
       Use `qp help` to see all commands.
       Also, try `qp help (command)`.
+
+      Config file stored at '~/.config/quickpress/'
     END
     exit
   end

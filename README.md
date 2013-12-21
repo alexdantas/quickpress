@@ -1,58 +1,68 @@
 # quickpress
 
-Manage your Wordpress site on the command-line
+Manage your Wordpress site on the command-line.
+
+## Features
+
+Quickpress allows you to quickly post on your Wordpress site.
+It is also:
+
+* **Powerful**: With quickpress you can create, delete and list
+  your posts and pages. More actions are coming on next releases.
+* **Easy-to-use**: Two to three commands should be everything you
+  need to know when using it.
+* **Versatile**: It supports a wide range of templating languages.
+  Markdown, Asciidoc, ERB and [much more](#supported-template-engines)!
+* **Documented**: [The wiki][wiki]
+  has all the guides you'll ever need. Also, reference is only
+  a `qp help` away.
+* **Safe**: quickpress doesn't store your username/password anywhere.
 
 ## Installation
 
-As usual with ruby gems, do
+Quickpress is on RubyGems. To install it, do:
 
     $ gem install quickpress
 
+If you want to install it yourself, [grab the gem][gem]
+and there you go!
+
 ## Getting started
 
-To use `quickpress` we call the executable `qp` with some
-commands.
+To use quickpress we call `qp` with some commands.
 
-When using your first command, `quikpress` will ask to save
-your Wordpress site address.
+To start using a site withing quickpress, do:
 
-So, for example, let's list all existing posts on your site:
+    $ qp new-site
+
+Now you can do a lot with it. For example, let's list all
+existing posts there:
 
     $ qp list-posts
 
-It will ask for your Wordpress url, username and password. Each
-command from now on will require the username and password only.
-
-Suppose you've written a nice markdown-formatted post on a file
-`my-post.md`. To post it, simply do:
+Want to post? Write it anywhere and point `qp` to it!
 
     $ qp new-post my-post.md
 
-`quickpress` handles different template engines based on their
-filename extensions. You can force one of them with the `-m`
-switch:
+If you're too lazy, calling `new-post` without no filenames will
+call your default text editor to write it.
+Try it!
 
-    $ qp new-post -m asciidoc my-file.txt
+Oops, you made a mistake and want to delete a post.
+First, list them and then delete by id:
 
-To post on-the-fly, call:
+    $ qp list-posts      # shows all posts, with their ID
+	$ qp delete-post ID
 
-    $ qp new-post
+All of the previous commands can be done with pages too.
 
-It will call your default text editor (set by the environment
-`EDITOR`) or ask you for it(if it's empty). When you save
-and quit it, it will get posted right away.
+Now say you want to post on another Worpress site.
+By doing `qp new-site` it should become the default.
 
-To delete posts, call the following command with an `id` seen
-with `list-posts`:
+After doing this, you can switch between them by using:
 
-    $ qp delete-post (id)
-
-To mess with pages, follow the same path:
-
-    $ qp new-page
-	$ qp new-page (filename)
-	$ qp list-pages
-	$ qp delete-page (id)
+	$ qp list-sites      # shows them all, with their ID
+	$ qp use-site ID     # sets a default site by it's ID
 
 If you want help with any command, just call:
 
@@ -62,9 +72,11 @@ To see a list of all commands, call:
 
     $ qp help
 
-A simple cheatsheet is shown when using:
+Finally, a simple cheatsheet is shown when doing:
 
     $ qp
+
+For more help and nice guides, check out [the wiki][wiki].
 
 ## Supported template engines
 
@@ -105,4 +117,6 @@ lowercase:
 	$ qp post -m textile my-text-file.txt
 
 [tilt]:https://github.com/rtomayko/tilt
+[wiki]:https://github.com/alexdantas/quickpress/wiki
+[gem]:https://rubygems.org/gem/quickpress/
 
