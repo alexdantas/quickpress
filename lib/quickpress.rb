@@ -116,7 +116,6 @@ module Quickpress
 
   # Allows the user to add a new site to manage.
   def new_site
-    Quickpress::first_time if @@default_site.nil?
     return if @@ran_first_time
 
     # If retrying, go back here.
