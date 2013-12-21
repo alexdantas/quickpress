@@ -7,6 +7,17 @@ require 'quickpress/wordpress'
 require 'quickpress/cli'
 require 'quickpress/options'
 
+class String
+  # Removes trailing whitespace.
+  def remove_trailing
+    dup.remove_trailing!
+  end
+  # Removes trailing whitespace (destructive).
+  def remove_trailing!
+    self.gsub(/^ +/, "")
+  end
+end
+
 # Controls all operations we can make.
 #
 # This module's a mess.
@@ -43,6 +54,7 @@ module Quickpress
 
   # Loads default site from configuration file
   def config_init
+
     CLI::with_status("Initializing...") do
 
       # Assuring default directories
@@ -57,8 +69,10 @@ module Quickpress
         settings = {} if not settings
 
         @@default_site = settings["default_site"]
-        @@default_sitename =
-          @@default_site.gsub(/htt(p|ps):\/\//, "").gsub(/\//, '-')
+        @@default_sitename = @@default_site.gsub(/htt(p|ps):\/\//, "").gsub(/\//, '-')
+
+      else
+        Quickpress::first_time
       end
 
       @@inited = true
@@ -71,11 +85,19 @@ module Quickpress
   # Asks stuff.
   #
   def first_time
-    puts <<-END.gsub(/^ +/, "")
+    puts <<-END.remove_trailing!
       Hello!
-      It looks like this is the first time you're running quickpress.
+      It looks like this is the first time you're
+      running quickpress.
+
       Let's connect to your Wordpress(.com/.org) site.
     END
+
+    Quickpress::new_site
+  end
+
+  # Allows the user to add a new site to manage.
+  def new_site
 
     # If retrying, go back here.
     begin
@@ -84,9 +106,14 @@ module Quickpress
 
       @@username   = CLI::get("Username:")
       @@password   = CLI::get_secret("Password:")
-      @@connection = Wordpress.new(address, @@username, @@password)
 
-      puts <<-END.gsub(/^ +/, "")
+      # Will try to connect here.
+      # Might take a while.
+      CLI::with_status("Connecting...") do
+        @@connection = Wordpress.new(address, @@username, @@password)
+      end
+
+      puts <<-END.remove_trailing!
 
         Title:   #{@@connection.title}
         Tagline: #{@@connection.tagline}
@@ -96,40 +123,124 @@ module Quickpress
       answer = CLI::ask "Is that right?"
       fail "will retry" if not answer
 
+      # Last site added becomes the default
       @@default_site = address
 
-      # For a @@default_site like "http://myblog.com/this/dir"
-      #
-      # The @@default_sitename must be "myblog.com-this-dir"
-      @@default_sitename =
-        address.gsub(/htt(p|ps):\/\//, "").gsub(/\//, '-')
+      # Hey, this is our first site!
+      if not File.exists? CONFIG_FILE
 
-      FileUtils.mkdir_p "#{DRAFT_DIR}/#{@@default_sitename}"
-      FileUtils.mkdir_p "#{POST_DIR}/#{@@default_sitename}"
+        # For a @@default_site like "http://myblog.com/this/dir"
+        #
+        # The @@default_sitename must be "myblog.com-this-dir"
+        @@default_sitename = address.gsub(/htt(p|ps):\/\//, "").gsub(/\//, '-')
 
-      # Saving to config file, taking care not
-      # to overwrite already-existing settings.
+        FileUtils.mkdir_p "#{DRAFT_DIR}/#{@@default_sitename}"
+        FileUtils.mkdir_p "#{POST_DIR}/#{@@default_sitename}"
 
-      settings = {}
+        # Saving to config file
+        settings = {}
 
-      if File.exists? CONFIG_FILE
+        settings["sites"] ||= []
+        settings["sites"] << @@default_site
+
+        settings["default_site"] = @@default_site
+
+        File.write(CONFIG_FILE, YAML.dump(settings))
+
+      # Config file exists
+      else
+
         raw = File.read CONFIG_FILE
 
-        settings.merge(YAML.load(raw))
+        settings = {}
+        settings.merge!(YAML.load(raw))
+
+        settings["sites"] ||= []
+        settings["sites"] << @@default_site
+
+        settings["default_site"] = @@default_site
+
+        File.write(CONFIG_FILE, YAML.dump(settings))
       end
-
-      settings["sites"] ||= []
-      settings["sites"] << @@default_site
-
-      settings["default_site"] = @@default_site
-
-      File.write(CONFIG_FILE, YAML.dump(settings))
 
     rescue StandardError => e
       retry if e.message =~ /will retry/
 
       raise e
     end
+  end
+
+  # Shows all saved sites.
+  def list_sites
+
+    # Hey, this is our first site!
+    if not File.exists? CONFIG_FILE
+      puts "No sites stored yet!"
+      puts
+      puts "Run `qp new-site` to create your first!"
+
+    else
+      raw = File.read CONFIG_FILE
+
+      settings = {}
+      settings.merge!(YAML.load(raw))
+
+      puts "Sites currently managed by quickpress:"
+      puts
+
+      settings["sites"].each_with_index do |site, i|
+        puts (" %3d. %s" % [i, site])
+      end
+    end
+  end
+
+  def delete_site ids
+
+    # Hey, there's no sites added yet!
+    if not File.exists? CONFIG_FILE
+      puts "No sites managed with quickpress yet!"
+      puts ""
+      exit 666
+    end
+
+    # Getting all sites from config file
+    raw = File.read CONFIG_FILE
+
+    settings = {}
+    settings.merge!(YAML.load(raw))
+
+    max_id = settings["sites"].size - 1
+    ids_to_delete = []
+
+    # Here we go!
+    ids.split(',').each do |id|
+
+      if not (0..max_id).include? id.to_i
+        puts "Invalid id!"
+        puts "Must be between 0 and #{max_id}."
+        next
+      end
+
+      puts "Will delete the following site:"
+      puts
+      puts settings["sites"][id.to_i]
+
+      answer = CLI::ask "Is that right?"
+      next if not answer
+
+      ids_to_delete << id.to_i
+    end
+
+    # Deleting a lot of sites at once
+    # Note: Is there a better way to do this?
+    #       Once I delete an id, all the others change!
+    #       I can't simply `each do delete` them.
+
+    ids_to_delete.each {|i| settings["sites"][i] = "will_delete" }
+
+    settings["sites"].reject! { |s| s == "will_delete" }
+
+    File.write(CONFIG_FILE, YAML.dump(settings))
   end
 
   # Entrance for when we're creating a page or a post
@@ -207,7 +318,7 @@ module Quickpress
     title = CLI::get "Title:"
 
     if what == :post
-      puts <<-END.gsub(/^ +/, "")
+      puts <<-END.remove_trailing!
       Existing blog categories:
       #{@@connection.categories.each { |c| puts "* #{c}" }}
       Use a comma-separated list (example: 'cat1, cat2, cat3')
@@ -241,7 +352,7 @@ module Quickpress
       puts "Page created!"
     end
 
-    puts <<-END.gsub(/^ +/, "")
+    puts <<-END.remove_trailing!
       id:   #{id}
       link: #{link}
     END
@@ -274,7 +385,7 @@ module Quickpress
         puts "Will delete the following page:"
       end
 
-      puts <<-END.gsub(/^ +/, "")
+      puts <<-END.remove_trailing!
 
         ID:      #{thing["post_id"]}
         Title:   #{thing["post_title"]}

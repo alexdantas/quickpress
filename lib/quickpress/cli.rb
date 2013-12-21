@@ -1,10 +1,16 @@
-
 require 'io/console' # ruby 1.9.3 above
 require 'abbrev'
 
 module Quickpress
 
   # Basic input/output functions for the console.
+  #
+  # They're *not* how we handle the quickpress commands - for that
+  # check `bin/qp`.
+  #
+  # These are ways to interact with the user - get password
+  # input, ask yes-or-no questions and such.
+  #
   module CLI
     module_function
 
@@ -59,6 +65,7 @@ module Quickpress
     #
     # `separator` is the character to use when separating
     # words.
+
     def tab_complete(prompt, completions, separator=" ")
 
       abbrevs = Abbrev::abbrev completions

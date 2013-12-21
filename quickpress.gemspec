@@ -8,9 +8,16 @@ Gem::Specification.new do |spec|
   spec.version       = Quickpress::VERSION
   spec.authors       = ["Alexandre Dantas"]
   spec.email         = ["eu@alexdantas.net"]
-  spec.description   = %q{TODO: Write a gem description}
-  spec.summary       = %q{TODO: Write a gem summary}
-  spec.homepage      = ""
+  spec.summary       = "Manage your Wordpress site on the command line"
+  spec.description   = <<END
+Quickpress allows you to create, delete and list your
+posts and pages on the command line.
+
+It supports a great deal of template languages allowing you to
+write the way you like.
+END
+
+  spec.homepage      = "http://quickpress.alexdantas.net/"
   spec.license       = "GPL-3.0"
 
   spec.files         = `git ls-files`.split($/)
@@ -20,7 +27,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'rubypress'
   spec.add_dependency 'tilt'
-  spec.add_dependency 'RedCarpet'
+  spec.add_dependency 'thor'
 
   spec.add_development_dependency 'rdoc'
   spec.add_development_dependency 'aruba'
