@@ -8,12 +8,13 @@ require 'quickpress/cli'
 require 'quickpress/options'
 
 class String
-  # Removes trailing whitespace.
-  def remove_trailing
-    dup.remove_trailing!
+  # Removes starting whitespace.
+  def remove_starting
+    dup.remove_starting!
   end
-  # Removes trailing whitespace (destructive).
-  def remove_trailing!
+
+  # Removes starting whitespace (destructive).
+  def remove_starting!
     self.gsub(/^ +/, "")
   end
 end
@@ -34,11 +35,10 @@ module Quickpress
   # Main directory where we store everything.
   ROOT_DIR    = File.expand_path "~/.config/quickpress"
 
-  POST_DIR    = "#{ROOT_DIR}/posts"
-  DRAFT_DIR   = "#{ROOT_DIR}/drafts"
   CONFIG_FILE = "#{ROOT_DIR}/config.yml"
 
   @@inited = nil
+  @@ran_first_time = false
 
   # URL of the default site used to post.
   @@default_site = nil
@@ -50,33 +50,55 @@ module Quickpress
   @@password   = nil
   @@connection = nil
 
+  # Supported templating languages and their file extensions.
+  @@supported_markup = [["markdown"     , '.md'],
+                        ["asciidoc"     , '.adoc'],
+                        ["erb"          , '.erb'],
+                        ["string"       , '.str'],
+                        ["erubis"       , '.erubis'],
+                        ["haml"         , '.haml'],
+                        ["sass"         , '.sass'],
+                        ["scss"         , '.scss'],
+                        ["less"         , '.less'],
+                        ["builder"      , '.builder'],
+                        ["liquid"       , '.liquid'],
+                        ["markdown"     , '.md'],
+                        ["textile"      , '.textile'],
+                        ["rdoc"         , '.rdoc'],
+                        ["radius"       , '.radius'],
+                        ["markaby"      , '.mab'],
+                        ["nokogiri"     , '.nokogiri'],
+                        ["coffeescript" , '.coffee'],
+                        ["creole"       , '.creole'],
+                        ["mediawiki"    , '.mw'],
+                        ["yajl"         , '.yajl'],
+                        ["csv"          , '.rcsv']]
+
   module_function
 
   # Loads default site from configuration file
   def config_init
 
-    CLI::with_status("Initializing...") do
+    # Reading config file if exists
+    if File.exists? CONFIG_FILE
+      CLI::with_status("Initializing...") do
 
-      # Assuring default directories
-      [ROOT_DIR, POST_DIR, DRAFT_DIR].each do |dir|
-        FileUtils.mkdir dir if not File.exists? dir
-      end
-
-      # Reading config file if exists
-      if File.exists? CONFIG_FILE
         raw = File.read CONFIG_FILE
         settings = YAML.load raw
         settings = {} if not settings
 
         @@default_site = settings["default_site"]
         @@default_sitename = @@default_site.gsub(/htt(p|ps):\/\//, "").gsub(/\//, '-')
-
-      else
-        Quickpress::first_time
       end
 
-      @@inited = true
+    # Config file doesn't exist
+    else
+      FileUtils.mkdir ROOT_DIR if not File.exists? ROOT_DIR
+
+      Quickpress::first_time
     end
+
+    @@inited = true
   end
 
   # Executes at the first time, when there's no configuration
@@ -85,23 +107,25 @@ module Quickpress
   # Asks stuff.
   #
   def first_time
-    puts <<-END.remove_trailing!
+    puts <<-END.remove_starting!
       Hello!
       It looks like this is the first time you're
       running quickpress.
 
       Let's connect to your Wordpress(.com/.org) site.
     END
+    puts
 
     Quickpress::new_site
+    @@ran_first_time = true
   end
 
   # Allows the user to add a new site to manage.
   def new_site
+    return if @@ran_first_time
 
     # If retrying, go back here.
     begin
-      puts
       address = CLI::get "Address:"
 
       @@username   = CLI::get("Username:")
@@ -113,7 +137,7 @@ module Quickpress
         @@connection = Wordpress.new(address, @@username, @@password)
       end
 
-      puts <<-END.remove_trailing!
+      puts <<-END.remove_starting!
 
         Title:   #{@@connection.title}
         Tagline: #{@@connection.tagline}
@@ -133,9 +157,6 @@ module Quickpress
         #
         # The @@default_sitename must be "myblog.com-this-dir"
         @@default_sitename = address.gsub(/htt(p|ps):\/\//, "").gsub(/\//, '-')
-
-        FileUtils.mkdir_p "#{DRAFT_DIR}/#{@@default_sitename}"
-        FileUtils.mkdir_p "#{POST_DIR}/#{@@default_sitename}"
 
         # Saving to config file
         settings = {}
@@ -189,9 +210,15 @@ module Quickpress
       puts
 
       settings["sites"].each_with_index do |site, i|
-        puts (" %3d. %s" % [i, site])
+
+        if @@default_site == site
+          puts (" %3d. %s <== default site" % [i, site])
+        else
+          puts (" %3d. %s" % [i, site])
+        end
       end
     end
+
   end
 
   def delete_site ids
@@ -241,118 +268,172 @@ module Quickpress
     settings["sites"].reject! { |s| s == "will_delete" }
 
     File.write(CONFIG_FILE, YAML.dump(settings))
+
+    # Ooh, boy
+    # We've just ran out of sites! Better delete that config file!
+    if settings["sites"].empty?
+      FileUtils.rm_f CONFIG_FILE
+    end
+  end
+
+  def use_site id
+    return if @@ran_first_time
+
+    # Hey, there's no sites added yet!
+    if not File.exists? CONFIG_FILE
+      puts "No sites managed with quickpress yet!"
+      puts ""
+      exit 666
+    end
+
+    # Getting all sites from config file
+    raw = File.read CONFIG_FILE
+
+    settings = {}
+    settings.merge!(YAML.load(raw))
+
+    max_id = settings["sites"].size - 1
+
+    if not (0..max_id).include? id.to_i
+      puts "Invalid id!"
+      puts "Must be between 0 and #{max_id}."
+      exit 666
+    end
+
+    site = settings["sites"][id]
+
+    puts "Default site: #{site}"
+    settings["default_site"] = site
+    File.write(CONFIG_FILE, YAML.dump(settings))
   end
 
   # Entrance for when we're creating a page or a post
   # (`what` says so).
   #
   def new(what, filename=nil)
-    startup
 
     if filename.nil?
+
       # Get editor to open temporary file
       editor = ENV["EDITOR"]
       if editor.nil?
         editor = get("Which text editor we'll use?")
       end
 
-      extension = ""
-      case $options[:markup]
-      when "markdown"     then extension = '.md'
-      when "asciidoc"     then extension = '.adoc'
-      when "erb"          then extension = '.erb'
-      when "string"       then extension = '.str'
-      when "erubis"       then extension = '.erubis'
-      when "haml"         then extension = '.haml'
-      when "sass"         then extension = '.sass'
-      when "scss"         then extension = '.scss'
-      when "less"         then extension = '.less'
-      when "builder"      then extension = '.builder'
-      when "liquid"       then extension = '.liquid'
-      when "markdown"     then extension = '.md'
-      when "textile"      then extension = '.textile'
-      when "rdoc"         then extension = '.rdoc'
-      when "radius"       then extension = '.radius'
-      when "markaby"      then extension = '.mab'
-      when "nokogiri"     then extension = '.nokogiri'
-      when "coffeescript" then extension = '.coffee'
-      when "creole"       then extension = '.creole'
-      when "mediawiki"    then extension = 'mw'
-      when "yajl"         then extension = '.yajl'
-      when "csv"          then extension = '.rcsv'
-      else fail "Unknown markup laguage '#{$options[:markup]}'"
+      extension = nil
+
+      # No markup passed as argument
+      if $options[:markup].nil?
+        puts "Choose your templating language."
+        puts
+
+        @@supported_markup.each_with_index do |m, i|
+          puts (" %2d. %s (%s)" % [i, m[0], m[1]])
+        end
+        puts
+
+        id = CLI::get("Which one?").to_i
+
+        max_id = @@supported_markup.size - 1
+
+        if not (0..max_id).include? id
+          puts "Invalid id!"
+          puts "Must be between 0 and #{max_id}."
+          exit 666
+        end
+
+        extension = @@supported_markup[id][1]
+
+      # User specified filename to post
+      else
+        markup_id = nil
+        @@supported_markup.each_with_index do |m, i|
+
+          if m[0].casecmp($options[:markup]).zero?
+            markup_id = i
+            break
+          end
+        end
+
+        if markup_id.nil?
+          fail "Unknown markup laguage '#{$options[:markup]}'"
+        end
+
+        extension = @@supported_markup[markup_id][1]
       end
 
-      # Create sample file
-      template = Time.now.strftime "%Y-%m-%d[%H:%M]#{extension}"
-
-      # as in 'page-xxx' or 'post-xxx'
-      template = "#{what}-#{template}"
-
-      draft = "#{DRAFT_DIR}/#{@@default_sitename}/#{template}"
-      final = "#{POST_DIR}/#{@@default_sitename}/#{template}"
+      # Create draft file
+      tempfile = Tempfile.new ['quickpress', extension]
+      tempfile.write "# Leave this file empty to cancel"
+      tempfile.flush
 
       # Oh yeah, baby
-      `#{editor} #{draft}`
+      `#{editor} #{tempfile.path}`
 
-      new_file(what, draft)
+      if tempfile.size.zero?
+        puts "Empty file: did nothing"
+        tempfile.close
+        exit 666
+      end
 
-      FileUtils.mv(draft, final)
+      puts "File: '#{tempfile.path}'" if $options[:debug]
+
+      new_file(what, tempfile.path)
+      tempfile.close
 
     else
       # Post file and copy it to posted directory.
       new_file(what, filename)
-
-      time  = Time.now.strftime "%Y-%m-%d[%H:%M]"
-      final = "#{POST_DIR}/#{@@default_sitename}/#{time}-#{File.basename(filename)}"
-
-      FileUtils.cp(filename, final)
     end
   end
 
   # Actually sends post/page `filename` to the blog.
   def new_file(what, filename)
-
+    startup
     html = Tilt.new(filename).render
 
-    title = CLI::get "Title:"
-
     if what == :post
-      puts <<-END.remove_trailing!
-      Existing blog categories:
-      #{@@connection.categories.each { |c| puts "* #{c}" }}
-      Use a comma-separated list (example: 'cat1, cat2, cat3')
-      Will create non-existing categories automatically.
+      title = CLI::get "Post title:"
 
-    END
+      puts "Existing blog categories:"
+      @@connection.categories.each { |c| puts "* #{c}" }
+
+      puts "Use a comma-separated list (eg. 'cat1, cat2, cat3')"
+      puts "Tab-completion works."
+      puts "(will create non-existing categories automatically)"
+
       categories = CLI::tab_complete("Post categories:", @@connection.categories)
 
       cats = []
       categories.split(',').each { |c| cats << c.lstrip.strip }
 
-      print "Posting..."
-      id, link = @@connection.post(:post_status  => 'publish',
-                                   :post_date    => Time.now,
-                                   :post_title   => title,
-                                   :post_content => html,
-                                   :terms_names  => {
-                                     :category => cats
-                                   })
-      CLI::clear_line
+      CLI::with_status("Posting...") do
+
+        id, link = @@connection.post(:post_status  => 'publish',
+                                     :post_date    => Time.now,
+                                     :post_title   => title,
+                                     :post_content => html,
+                                     :terms_names  => {
+                                       :category => cats
+                                     })
+      end
       puts "Post successful!"
 
     elsif what == :page
-      print "Creating page..."
-      id, link = @@connection.post(:post_status  => 'publish',
-                                   :post_date    => Time.now,
-                                   :post_title   => title,
-                                   :post_content => html,
-                                   :post_type    => 'page')
-      CLI::clear_line
+      title = CLI::get "Page title:"
+
+      CLI::with_status("Creating page...") do
+
+        id, link = @@connection.post(:post_status  => 'publish',
+                                     :post_date    => Time.now,
+                                     :post_title   => title,
+                                     :post_content => html,
+                                     :post_type    => 'page')
+      end
       puts "Page created!"
     end
 
-    puts <<-END.remove_trailing!
+    puts <<-END.remove_starting!
       id:   #{id}
       link: #{link}
     END
@@ -369,15 +450,16 @@ module Quickpress
 
     ids.split(',').each do |id|
 
-      print "Hold on a sec..."
-      thing = nil
-      if what == :post
-        thing = @@connection.get_post id.to_i
-      elsif what == :page
-        thing = @@connection.get_page id.to_i
-      end
+      CLI::with_status("Hold on a sec...") do
 
-      CLI::clear_line
+        thing = nil
+        if what == :post
+          thing = @@connection.get_post id.to_i
+        elsif what == :page
+          thing = @@connection.get_page id.to_i
+        end
+
+      end
 
       if what == :post
         puts "Will delete the following post:"
@@ -385,7 +467,7 @@ module Quickpress
         puts "Will delete the following page:"
       end
 
-      puts <<-END.remove_trailing!
+      puts <<-END.remove_starting!
 
         ID:      #{thing["post_id"]}
         Title:   #{thing["post_title"]}
@@ -424,6 +506,7 @@ module Quickpress
       CLI::with_status("Retrieving posts...") do
         elements = @@connection.get_posts ammount
       end
+
     elsif what == :page
       CLI::with_status("Retrieving pages...") do
         elements = @@connection.get_pages ammount
@@ -451,7 +534,7 @@ module Quickpress
   def startup
     first_time if @@default_site.nil?
 
-    puts "Using '#{@@default_site}'"
+    puts "Using site '#{@@default_site}'"
 
     @@username ||= CLI::get("Username:")
     @@password ||= CLI::get_secret("Password:")

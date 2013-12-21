@@ -10,6 +10,11 @@ require 'quickpress'
 #
 class QP < Thor
 
+  # Global `--debug` flag
+  class_option(:debug,
+               :desc => "debugging mode",
+               :type => :boolean)
+
   #  _      ____  _         ___   ___   __  _____
   # | |\ | | |_  \ \    /  | |_) / / \ ( (`  | |
   # |_| \| |_|__  \_\/\/   |_|   \_\_/ _)_)  |_|
@@ -17,21 +22,25 @@ class QP < Thor
   desc('new-post [FILENAME]',
        'Creates a post on your Wordpress site')
 
-  method_option('markup',
-                :banner => "markup language",
-                :aliases => "-m")
+  option('markup',
+         :banner  => "name",
+         :desc    => "markup language",
+         :aliases => "-m")
 
-  long_desc(<<-END)
+  long_desc(<<-END).remove_starting!
     If FILENAME is given, will post it to your Wordpress site.
 
-    If no FILENAME is given, will launch default text editor and
-    prompt for a post.
+    If no FILENAME is set, will launch default text editor and
+    \x5wait for you to write a post. After you save it, will post
+    \x5that.
 
-    After it is written and saved, will post that to your Wordpress
-    site.
+    * Set default text editor with the `EDITOR` environment
+    \x5variable.
+    \x5* For a list of markup languages, do `qp markup-list`.
   END
 
   def new_post(filename=nil)
+    $options[:debug] = options[:debug]
     $options[:markup] = options[:markup]
 
     Quickpress::new(:post, filename)
@@ -44,14 +53,15 @@ class QP < Thor
   desc('list-posts [COUNT]',
        'Shows last posts from Wordpress site')
 
-  long_desc <<-END
+  long_desc <<-END.remove_starting!
     If COUNT is given, will show last COUNT posts,
-    most recent first.
+    \x5most recent first.
 
     If no COUNT is given, will show all posts.
   END
 
   def list_posts(ammount=0)
+    $options[:debug] = options[:debug]
     Quickpress::list(:post, ammount.to_i)
   end
 
@@ -62,22 +72,23 @@ class QP < Thor
   desc('delete-post ID',
        'Deletes post by ID')
 
-  long_desc(<<-END)
+  long_desc(<<-END).remove_starting!
     Deletes the post with numerical id equal to ID.
 
     To see IDs, use `qp list-posts`.
 
     You can specify multiple IDs, just make sure to
-    keep them apart with commas.
+    \x5keep them apart with commas.
 
     For example:
 
-        $ qp delete-post "4,8,15,16,23,42"
+    > $ qp delete-post "4,8,15,16,23,42"
 
     If the post doesn't exist, do nothing.
   END
 
   def delete_post(ids)
+    $options[:debug] = options[:debug]
     Quickpress::delete(:post, ids)
   end
 
@@ -88,22 +99,26 @@ class QP < Thor
   desc('new-page [FILENAME]',
        'Creates a page on your Wordpress site')
 
-  method_option('markup',
-                :banner => "markup language",
-                :aliases => "-m")
+  option('markup',
+         :banner  => "name",
+         :desc    => "markup language",
+         :aliases => "-m")
 
-  long_desc <<-END
+  long_desc <<-END.remove_starting!
     If FILENAME is given, will send it as a page to your
-    Wordpress site.
+    \x5Wordpress site.
 
-    If no FILENAME is given, will launch default text editor and
-    prompt for a page.
+    If no FILENAME is set, will launch default text editor and
+    \x5wait for you to write a page. After you save it, will send
+    \x5that.
 
-    After it is written and saved, will page that to your Wordpress
-    site.
+    * Set default text editor with the `EDITOR` environment
+    \x5  variable.
+    \x5* For a list of markup languages, do `qp markup-list`.
   END
 
   def new_page(filename=nil)
+    $options[:debug] = options[:debug]
     $options[:markup] = options[:markup]
 
     Quickpress::new(:page, filename)
@@ -116,14 +131,15 @@ class QP < Thor
   desc('list-pages [COUNT]',
        'Shows last pages from Wordpress site')
 
-  long_desc <<-END
+  long_desc <<-END.remove_starting!
     If COUNT is given, will show last COUNT pages,
-    most recent first.
+    \x5most recent first.
 
     If no COUNT is given, will show all pages.
   END
 
   def list_pages(ammount=0)
+    $options[:debug] = options[:debug]
     Quickpress::list(:page, ammount.to_i)
   end
 
@@ -134,22 +150,22 @@ class QP < Thor
   desc('delete-page ID',
        'Deletes page by ID')
 
-  long_desc(<<-END)
+  long_desc(<<-END).remove_starting!
     Deletes the page with numerical id equal to ID.
 
     To see IDs, use `qp list-pages`.
 
     You can specify multiple IDs, just make sure to
-    keep them apart with commas.
+    \x5keep them apart with commas.
+    \x5For example:
 
-    For example:
-
-        $ qp delete-page "42,666,1337"
+    > $ qp delete-page "42,666,1337"
 
     If the page doesn't exist, do nothing.
   END
 
   def delete_page(ids)
+    $options[:debug] = options[:debug]
     Quickpress::delete(:page, ids)
   end
 
@@ -160,9 +176,9 @@ class QP < Thor
   desc('new-site',
        'Starts managing a Wordpress site.')
 
-  long_desc <<-END
+  long_desc <<-END.remove_starting!
     Will prompt you for an address, username and password.
-    If everything's correct, will add that site to quickpress.
+    \x5If everything's correct, will add that site to quickpress.
 
     By adding we mean you'll be able to do all commands on it.
 
@@ -170,6 +186,7 @@ class QP < Thor
   END
 
   def new_site
+    $options[:debug] = options[:debug]
     Quickpress::new_site
   end
 
@@ -180,12 +197,13 @@ class QP < Thor
   desc('list-sites',
        'Shows all sites currently added to quickpress')
 
-  long_desc <<-END
+  long_desc <<-END.remove_starting!
     Will list all sites you've added with `qp new-site`.
-    If no COUNT is given, will show all pages.
+    \x5If no COUNT is given, will show all pages.
   END
 
   def list_sites
+    $options[:debug] = options[:debug]
     Quickpress::list_sites
   end
 
@@ -196,22 +214,72 @@ class QP < Thor
   desc('delete-site ID',
        'Deletes site by ID')
 
-  long_desc(<<-END)
+  long_desc(<<-END).remove_starting!
     Deletes the site with numerical id equal to ID.
 
     To see IDs, use `qp list-sites`.
 
     You can specify multiple IDs, just make sure to
-    keep them apart with commas.
+    \x5keep them apart with commas.
+    \x5For example:
 
-    For example:
-
-        $ qp delete-site "11,24,69"
+    > $ qp delete-site "11,24,69"
   END
 
   def delete_site(ids)
+    $options[:debug] = options[:debug]
     Quickpress::delete_site(ids)
   end
+
+  #  _     __   ____    __   _  _____  ____
+  # | | | ( (` | |_    ( (` | |  | |  | |_
+  # \_\_/ _)_) |_|__   _)_) |_|  |_|  |_|__
+  #
+  desc('use-site ID',
+       'Sets site with ID as default')
+
+  long_desc(<<-END).remove_starting!
+    From now on will do actions on the site with numerical
+    \x5id equal to ID.
+
+    To see IDs, use `qp list-sites`.
+  END
+
+  def use_site id
+    $options[:debug] = options[:debug]
+    Quickpress::use_site(id.to_i)
+  end
+
+  #  _     _   __  _____    _       __    ___   _     _     ___
+  # | |   | | ( (`  | |    | |\/|  / /\  | |_) | |_/ | | | | |_)
+  # |_|__ |_| _)_)  |_|    |_|  | /_/--\ |_| \ |_| \ \_\_/ |_|
+  #
+  desc('list-markup',
+       'Show all supported templating languages')
+
+  long_desc(<<-END).remove_starting!
+    Lists all templating languages supported by quickpress.
+
+    You can use them with the `--markup` option when creating
+    \x5new posts or pages.
+
+    > $ qp new-post --markup asciidoc
+
+    If you create a post/page with a file, they're implied
+    \x5based on it's filename extension.
+
+    > $ qp new-post filename.asciidoc
+  END
+
+  def list_markup
+    puts "Name (file extension)"
+    puts
+
+    Quickpress::supported_markup.each do |m|
+      puts "* #{m[0]} (#{m[1]})"
+    end
+  end
+
 end
 
 #  ___   ____  __    _   _
@@ -220,11 +288,11 @@ end
 #
 begin
   if ARGV.empty?
-    puts <<-END.remove_trailing!
+    puts <<-END.remove_starting!
       quickpress v#{Quickpress::VERSION}
       Cheatsheet:
 
-      	$ qp {new,delete}-{post,page}
+      	$ qp {new,delete}-{post,page,site}
       	$ qp list-(post|page)s
 
       Use `qp help` to see all commands.
@@ -243,7 +311,7 @@ begin
   # with this `rescue` stuff.
 
 rescue Net::ReadTimeout
-  $stderr.puts <<-END.remove_trailing!
+  $stderr.puts <<-END.remove_starting!
 
     * Connection took too long.
       Check your internet settings and try again.
@@ -253,7 +321,7 @@ rescue Net::ReadTimeout
 rescue XMLRPC::FaultException => e
   if e.message =~ /Incorrect username or password/
 
-    $stderr.puts <<-END.remove_trailing!
+    $stderr.puts <<-END.remove_starting!
 
       * Incorrect username or password.
     END
@@ -266,7 +334,7 @@ rescue XMLRPC::FaultException => e
 
 rescue ArgumentError => arg
   if arg.message =~ /Wrong protocol specified/
-    $stderr.puts <<-END.remove_trailing!
+    $stderr.puts <<-END.remove_starting!
           * Wrong protocol at Wordpress site.
             Please use `http` or `https`.
         END
@@ -276,20 +344,21 @@ rescue ArgumentError => arg
 rescue Interrupt => i
   $stderr.puts
   $stderr.puts "* You've interrupted me, mate"
-  $stderr.puts i.backtrace
+
+  $stderr.puts i.backtrace if $options[:debug]
   exit 666
 
 rescue StandardError => e
 
   if e.message =~ /Wrong content-type/
-    $stderr.puts <<-END.remove_trailing!
+    $stderr.puts <<-END.remove_starting!
           * This doesn't seem to be a Wordpress site.
             Check the address again.
         END
     exit 666
 
   elsif e.message =~ /Name or service not known/
-    $stderr.puts <<-END.remove_trailing!
+    $stderr.puts <<-END.remove_starting!
 
       * Connection error!
         Either site doesn't exist or there's
@@ -305,7 +374,7 @@ rescue StandardError => e
 
   $stderr.puts e
   $stderr.puts e.message
-  $stderr.puts e.backtrace
+  $stderr.puts e.backtrace if $options[:debug]
   exit 666
 end
 

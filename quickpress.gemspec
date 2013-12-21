@@ -30,10 +30,7 @@ END
   spec.add_dependency 'thor'
 
   spec.add_development_dependency 'rdoc'
-  spec.add_development_dependency 'aruba'
   spec.add_development_dependency 'bundler', '~> 1.3'
   spec.add_development_dependency 'rake'
-
-  spec.add_runtime_dependency 'gli', '2.8.1'
 end
 
