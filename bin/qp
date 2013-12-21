@@ -114,7 +114,7 @@ class QP < Thor
 
     * Set default text editor with the `EDITOR` environment
     \x5  variable.
-    \x5* For a list of markup languages, do `qp markup-list`.
+    \x5* For a list of markup languages, do `qp list-markup`.
   END
 
   def new_page(filename=nil)
@@ -207,15 +207,16 @@ class QP < Thor
     Quickpress::list_sites
   end
 
-  #  ___   ____  _     ____ _____  ____    __   _  _____  ____
-  # | | \ | |_  | |   | |_   | |  | |_    ( (` | |  | |  | |_
-  # |_|_/ |_|__ |_|__ |_|__  |_|  |_|__   _)_) |_|  |_|  |_|__
+  #  ____  ___   ___   __    ____ _____    __   _  _____  ____
+  # | |_  / / \ | |_) / /`_ | |_   | |    ( (` | |  | |  | |_
+  # |_|   \_\_/ |_| \ \_\_/ |_|__  |_|    _)_) |_|  |_|  |_|__
   #
-  desc('delete-site ID',
-       'Deletes site by ID')
+  desc('forget-site ID',
+       'Forgets site with ID')
 
   long_desc(<<-END).remove_starting!
-    Deletes the site with numerical id equal to ID.
+    Makes quickpress stop managing the site with numerical
+    \x5id equal to ID.
 
     To see IDs, use `qp list-sites`.
 
@@ -223,12 +224,12 @@ class QP < Thor
     \x5keep them apart with commas.
     \x5For example:
 
-    > $ qp delete-site "11,24,69"
+    > $ qp forget-site "11,24,69"
   END
 
-  def delete_site(ids)
+  def forget_site(ids)
     $options[:debug] = options[:debug]
-    Quickpress::delete_site(ids)
+    Quickpress::forget_site(ids)
   end
 
   #  _     __   ____    __   _  _____  ____
@@ -279,7 +280,6 @@ class QP < Thor
       puts "* #{m[0]} (#{m[1]})"
     end
   end
-
 end
 
 #  ___   ____  __    _   _
@@ -292,13 +292,22 @@ begin
       quickpress v#{Quickpress::VERSION}
       Cheatsheet:
 
-      	$ qp {new,delete}-{post,page,site}
-      	$ qp list-(post|page)s
+      	$ qp {new,delete}-{post,page}
+      	$ qp list-(post|page|site)s
+      	$ qp {new,forget}-site
+      	$ qp use-site
+      	$ qp list-markup
 
-      Use `qp help` to see all commands.
-      Also, try `qp help (command)`.
+      All commands: `qp help`
+      Command info: `qp help (command)`
 
-      Config file stored at '~/.config/quickpress/'
+      Config directory: `~/.config/quickpress/`
+
+      homepage: http://quickpress.alexdantas.net
+      mailto:   eu@alexdantas.net
+
+      This software is licensed under the
+      GNU General Public License version 3 or later.
     END
     exit
   end
@@ -348,6 +357,14 @@ rescue Interrupt => i
   $stderr.puts "* You've interrupted me, mate"
 
   $stderr.puts i.backtrace if $options[:debug]
+  exit 666
+
+rescue LoadError => l
+  $stderr.puts <<-END.remove_starting!
+
+    * Couldn't load '#{l.path}'.
+      Make sure it's gem is installed and try again.
+  END
   exit 666
 
 rescue StandardError => e

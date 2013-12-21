@@ -1,5 +1,9 @@
 # quickpress
 
+[![Gem Version](https://badge.fury.io/rb/quickpress.png)](http://badge.fury.io/rb/quickpress)
+[![emacs banner](http://badges.alexdantas.net/emacs.png)](http://badges.alexdantas.net/)
+[![free-software banner](http://badges.alexdantas.net/free-software.png)](http://badges.alexdantas.net/)
+
 Manage your Wordpress site on the command-line.
 
 ## Features
@@ -8,15 +12,20 @@ Quickpress allows you to quickly post on your Wordpress site.
 It is also:
 
 * **Powerful**: With quickpress you can create, delete and list
-  your posts and pages. More actions are coming on next releases.
-* **Easy-to-use**: Two to three commands should be everything you
-  need to know when using it.
+  your posts and pages. More actions are expected on next releases.
+* **Easy-to-use**: [Two to three commands](#getting-started) should
+  be everything you need to know about it.
 * **Versatile**: It supports a wide range of templating languages.
   Markdown, Asciidoc, ERB and [much more](#supported-template-engines)!
 * **Documented**: [The wiki][wiki]
   has all the guides you'll ever need. Also, reference is only
   a `qp help` away.
-* **Safe**: quickpress doesn't store your username/password anywhere.
+* **Unified**: Works on both Wordpress.com and self-hosted Wordpress.org
+  websites.
+* **Safe**: Quickpress doesn't store your username/password anywhere.
+* **Free**: It is licensed under the GPLv3. It means that quickpress
+  will always be free
+  ([both as in "free beer" and as in "freedom"](http://en.wikipedia.org/wiki/Gratis_versus_libre#.22Free_beer.22_vs_.22free_speech.22_distinction)).
 
 ## Installation
 
@@ -116,7 +125,39 @@ lowercase:
 	$ qp post -m asciidoc my-text-file.txt
 	$ qp post -m textile my-text-file.txt
 
+## Development
+
+Quickpress uses [Thor][thor] for it's CLI interface and [rubypress] for
+the Wordpress XMLRPC API.
+
+For now the source code is a mess.
+Any comments are well-appreciated.
+
+Contributions are *always* welcome, regardless of the size.
+Here's how you can do it:
+
+1. Fork me
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Do your magic
+4. Commit your changes (`git commit -am 'Add some feature'`)
+5. Push to the branch (`git push origin my-new-feature`)
+6. Create new Pull Request
+
+An easy way is to help on documentation. For that, simply head up
+for [the wiki][wiki] and start editing things.
+
+## Contact
+
+Hi, I'm Alexandre Dantas! Thanks for having interest in this project.
+Please take the time to visit any of the links below.
+
+* `quickpress` homepage: http://quickpress.alexdantas.net/
+* My homepage: http://www.alexdantas.net
+* Mail me: `eu at alexdantas.net`
+
 [tilt]:https://github.com/rtomayko/tilt
+[thor]:http://whatisthor.com/
+[rubypress]:https://github.com/zachfeldman/rubypress
 [wiki]:https://github.com/alexdantas/quickpress/wiki
 [gem]:https://rubygems.org/gem/quickpress/
 

@@ -34,7 +34,6 @@ module Quickpress
 
   # Main directory where we store everything.
   ROOT_DIR    = File.expand_path "~/.config/quickpress"
-
   CONFIG_FILE = "#{ROOT_DIR}/config.yml"
 
   @@inited = nil
@@ -90,15 +89,10 @@ module Quickpress
         @@default_site = settings["default_site"]
         @@default_sitename = @@default_site.gsub(/htt(p|ps):\/\//, "").gsub(/\//, '-')
       end
-
-    # Config file doesn't exist
-    else
-      FileUtils.mkdir ROOT_DIR if not File.exists? ROOT_DIR
-
-      Quickpress::first_time
+      @@inited = true
     end
 
-    @@inited = true
+    FileUtils.mkdir_p ROOT_DIR if not File.exists? ROOT_DIR
   end
 
   # Executes at the first time, when there's no configuration
@@ -122,14 +116,40 @@ module Quickpress
 
   # Allows the user to add a new site to manage.
   def new_site
+    Quickpress::first_time if @@default_site.nil?
     return if @@ran_first_time
 
     # If retrying, go back here.
     begin
-      address = CLI::get "Address:"
+      address = CLI::get("Address:")
+      address.gsub!(/http:\/\//, "")
+      address.gsub!(/www\./, "")
+      address.gsub!(/\/$/, "")
 
-      @@username   = CLI::get("Username:")
-      @@password   = CLI::get_secret("Password:")
+      # Checking if site already exists
+      if File.exists? CONFIG_FILE
+        raw = File.read CONFIG_FILE
+
+        settings = {}
+        settings.merge!(YAML.load(raw))
+
+        settings["sites"].each do |s|
+          if address == s
+            puts
+            puts "There's already a site with address '#{address}'"
+            puts "Check it with `qp list-sites`."
+
+            if @@default_site == s
+              puts
+              puts "It's your default site, by the way"
+            end
+            exit 666
+          end
+        end
+      end
+
+      @@username = CLI::get("Username:")
+      @@password = CLI::get_secret("Password:")
 
       # Will try to connect here.
       # Might take a while.
@@ -139,9 +159,9 @@ module Quickpress
 
       puts <<-END.remove_starting!
 
-        Title:   #{@@connection.title}
-        Tagline: #{@@connection.tagline}
-        Url:     #{@@connection.url}
+        Title:    #{@@connection.title}
+        Tagline:  #{@@connection.tagline}
+        Url:      #{@@connection.url}
       END
 
       answer = CLI::ask "Is that right?"
@@ -221,12 +241,12 @@ module Quickpress
 
   end
 
-  def delete_site ids
+  def forget_site ids
 
     # Hey, there's no sites added yet!
     if not File.exists? CONFIG_FILE
       puts "No sites managed with quickpress yet!"
-      puts ""
+      puts "Add them with `qp new-site`"
       exit 666
     end
 
@@ -258,7 +278,7 @@ module Quickpress
       ids_to_delete << id.to_i
     end
 
-    # Deleting a lot of sites at once
+    # Forgetting a lot of sites at once
     # Note: Is there a better way to do this?
     #       Once I delete an id, all the others change!
     #       I can't simply `each do delete` them.
@@ -277,6 +297,7 @@ module Quickpress
   end
 
   def use_site id
+    Quickpress::first_time if @@default_site.nil?
     return if @@ran_first_time
 
     # Hey, there's no sites added yet!
@@ -311,7 +332,6 @@ module Quickpress
   # (`what` says so).
   #
   def new(what, filename=nil)
-
     if filename.nil?
 
       # Get editor to open temporary file
@@ -389,7 +409,7 @@ module Quickpress
 
   # Actually sends post/page `filename` to the blog.
   def new_file(what, filename)
-    startup
+    Quickpress::startup
     html = Tilt.new(filename).render
 
     if what == :post
@@ -437,16 +457,12 @@ module Quickpress
       id:   #{id}
       link: #{link}
     END
-
-  rescue => e
-    $stderr.puts e.message
-    exit 2
   end
 
   # Deletes comma-separated list of posts/pages with `ids`.
   # A single number is ok too.
   def delete(what, ids)
-    startup
+    Quickpress::startup
 
     ids.split(',').each do |id|
 
@@ -499,7 +515,7 @@ module Quickpress
   # publication.
   #
   def list(what, ammount)
-    startup
+    Quickpress::startup
 
     elements = nil
     if what == :post
@@ -532,7 +548,7 @@ module Quickpress
   # Initializes everything based on the config file or
   # simply by asking the user.
   def startup
-    first_time if @@default_site.nil?
+    Quickpress::first_time if @@default_site.nil?
 
     puts "Using site '#{@@default_site}'"
 
