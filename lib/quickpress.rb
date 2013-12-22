@@ -110,17 +110,21 @@ module Quickpress
     END
     puts
 
-    Quickpress::new_site
+    Quickpress::new_site(nil)
     @@ran_first_time = true
   end
 
-  # Allows the user to add a new site to manage.
-  def new_site
+  # Adds site with URL `addr` to quickpress.
+  # If it's `nil`, will prompt the user for it.
+  def new_site(addr=nil)
     return if @@ran_first_time
+    address = nil
 
     # If retrying, go back here.
     begin
-      address = CLI::get("Address:")
+      address = addr.dup if not addr.nil? # cannot .dup NilClass
+      address ||= CLI::get("Address:")
+
       address.gsub!(/http:\/\//, "")
       address.gsub!(/www\./, "")
       address.gsub!(/\/$/, "")
@@ -147,8 +151,7 @@ module Quickpress
         end
       end
 
-      @@username = CLI::get("Username:")
-      @@password = CLI::get_secret("Password:")
+      Quickpress::authenticate
 
       # Will try to connect here.
       # Might take a while.
@@ -271,8 +274,13 @@ module Quickpress
       puts
       puts settings["sites"][id.to_i]
 
-      answer = CLI::ask "Is that right?"
-      next if not answer
+      if not $options[:force]
+        answer = CLI::ask("Is that right?")
+        if not answer
+          puts "Alright, then!"
+          next
+        end
+      end
 
       ids_to_delete << id.to_i
     end
@@ -285,6 +293,14 @@ module Quickpress
     ids_to_delete.each {|i| settings["sites"][i] = "will_delete" }
 
     settings["sites"].reject! { |s| s == "will_delete" }
+
+    # Just in case we've just deleted the default site,
+    # let's grab the first one left
+    if not settings["sites"].include? @@default_site
+      if not settings["sites"].empty?
+        settings["default_site"] = settings["sites"].first
+      end
+    end
 
     File.write(CONFIG_FILE, YAML.dump(settings))
 
@@ -411,6 +427,9 @@ module Quickpress
     Quickpress::startup
     html = Tilt.new(filename).render
 
+    # If successful, will store page id and link
+    id, link = nil, nil
+
     if what == :post
       title = CLI::get "Post title:"
 
@@ -465,9 +484,10 @@ module Quickpress
 
     ids.split(',').each do |id|
 
+      thing = nil
+
       CLI::with_status("Hold on a sec...") do
 
-        thing = nil
         if what == :post
           thing = @@connection.get_post id.to_i
         elsif what == :page
@@ -541,6 +561,15 @@ module Quickpress
     puts "+-----+---------------------------------------+-----------------------+--------+"
   end
 
+  def list_markup
+    puts "Name (file extension)"
+    puts
+
+    @@supported_markup.each do |m|
+      puts "* #{m[0]} (#{m[1]})"
+    end
+  end
+
   private
   module_function
 
@@ -551,13 +580,25 @@ module Quickpress
 
     puts "Using site '#{@@default_site}'"
 
-    @@username ||= CLI::get("Username:")
-    @@password ||= CLI::get_secret("Password:")
+    Quickpress::authenticate
 
     CLI::with_status("Connecting...") do
       @@connection ||= Wordpress.new(@@default_site, @@username, @@password)
     end
   end
 
+  # Gets username and password.
+  #
+  # First, try getting from environment variables
+  # `QP_USERNAME` and `QP_PASSWORD`.
+  #
+  # If that fails, asks to the user.
+  def authenticate
+    @@username ||= ENV["QP_USERNAME"]
+    @@password ||= ENV["QP_PASSWORD"]
+
+    @@username ||= CLI::get("Username:")
+    @@password ||= CLI::get_secret("Password:")
+  end
 end
 

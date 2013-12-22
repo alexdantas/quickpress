@@ -38,7 +38,7 @@ and there you go!
 
 ## Getting started
 
-To use quickpress we call `qp` with some commands.
+To use quickpress we call `qp` with some commands, just like `git`.
 
 To start using a site withing quickpress, do:
 

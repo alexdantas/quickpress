@@ -72,6 +72,11 @@ class QP < Thor
   desc('delete-post ID',
        'Deletes post by ID')
 
+  option('force',
+         :type => :boolean,
+         :desc    => "delete without confirming first",
+         :aliases => "-f")
+
   long_desc(<<-END).remove_starting!
     Deletes the post with numerical id equal to ID.
 
@@ -89,6 +94,8 @@ class QP < Thor
 
   def delete_post(ids)
     $options[:debug] = options[:debug]
+    $options[:force] = options[:force]
+
     Quickpress::delete(:post, ids)
   end
 
@@ -150,6 +157,11 @@ class QP < Thor
   desc('delete-page ID',
        'Deletes page by ID')
 
+  option('force',
+         :type => :boolean,
+         :desc    => "delete without confirming first",
+         :aliases => "-f")
+
   long_desc(<<-END).remove_starting!
     Deletes the page with numerical id equal to ID.
 
@@ -166,6 +178,8 @@ class QP < Thor
 
   def delete_page(ids)
     $options[:debug] = options[:debug]
+    $options[:force] = options[:force]
+
     Quickpress::delete(:page, ids)
   end
 
@@ -173,11 +187,13 @@ class QP < Thor
   # | |\ | | |_  \ \    /  ( (` | |  | |  | |_
   # |_| \| |_|__  \_\/\/   _)_) |_|  |_|  |_|__
   #
-  desc('new-site',
+  desc('new-site [ADDRESS]',
        'Starts managing a Wordpress site.')
 
   long_desc <<-END.remove_starting!
-    Will prompt you for an address, username and password.
+    If ADDRESS is provided, add it to quickpress.
+
+    If not, will prompt you for an address, username and password.
     \x5If everything's correct, will add that site to quickpress.
 
     By adding we mean you'll be able to do all commands on it.
@@ -185,9 +201,9 @@ class QP < Thor
     To see all sites added to quickpress, see `qp list-sites`.
   END
 
-  def new_site
+  def new_site(address=nil)
     $options[:debug] = options[:debug]
-    Quickpress::new_site
+    Quickpress::new_site address
   end
 
   #  _     _   __  _____    __   _  _____  ____  __
@@ -214,6 +230,11 @@ class QP < Thor
   desc('forget-site ID',
        'Forgets site with ID')
 
+  option('force',
+         :type => :boolean,
+         :desc    => "forget without confirming first",
+         :aliases => "-f")
+
   long_desc(<<-END).remove_starting!
     Makes quickpress stop managing the site with numerical
     \x5id equal to ID.
@@ -229,6 +250,8 @@ class QP < Thor
 
   def forget_site(ids)
     $options[:debug] = options[:debug]
+    $options[:force] = options[:force]
+
     Quickpress::forget_site(ids)
   end
 
@@ -273,12 +296,7 @@ class QP < Thor
   END
 
   def list_markup
-    puts "Name (file extension)"
-    puts
-
-    Quickpress::supported_markup.each do |m|
-      puts "* #{m[0]} (#{m[1]})"
-    end
+    Quickpress::list_markup
   end
 end
 
