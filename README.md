@@ -161,3 +161,4 @@ Please take the time to visit any of the links below.
 [wiki]:https://github.com/alexdantas/quickpress/wiki
 [gem]:https://rubygems.org/gem/quickpress/
 
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/72dc86b8e7c376b54dabd5d33b42c774 "githalytics.com")](http://githalytics.com/alexdantas/quickpress)
