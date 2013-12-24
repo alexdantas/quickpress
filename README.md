@@ -164,3 +164,4 @@ Please take the time to visit any of the links below.
 [gem]:https://rubygems.org/gem/quickpress/
 [blogpost]:http://srackham.wordpress.com/blogpost-readme/
 
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/72dc86b8e7c376b54dabd5d33b42c774 "githalytics.com")](http://githalytics.com/alexdantas/quickpress)
