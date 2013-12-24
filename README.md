@@ -4,7 +4,7 @@
 [![emacs banner](http://badges.alexdantas.net/emacs.png)](http://badges.alexdantas.net/)
 [![free-software banner](http://badges.alexdantas.net/free-software.png)](http://badges.alexdantas.net/)
 
-Manage your Wordpress site on the command-line.
+Manage your Wordpress site from the command line.
 
 ## Features
 
@@ -53,7 +53,7 @@ Want to post? Write it anywhere and point `qp` to it!
 
     $ qp new-post my-post.md
 
-If you're too lazy, calling `new-post` without no filenames will
+If you're too lazy, calling `new-post` without filenames will
 call your default text editor to write it.
 Try it!
 
@@ -127,8 +127,10 @@ lowercase:
 
 ## Development
 
-Quickpress uses [Thor][thor] for it's CLI interface and [rubypress] for
-the Wordpress XMLRPC API.
+Quickpress uses [Thor][thor] for it's CLI interface and
+[rubypress] for the Wordpress XMLRPC API.
+It was highly inspired by the [blogpost] tool - thanks
+a lot, Stuart Rackam!
 
 For now the source code is a mess.
 Any comments are well-appreciated.
@@ -160,4 +162,5 @@ Please take the time to visit any of the links below.
 [rubypress]:https://github.com/zachfeldman/rubypress
 [wiki]:https://github.com/alexdantas/quickpress/wiki
 [gem]:https://rubygems.org/gem/quickpress/
+[blogpost]:http://srackham.wordpress.com/blogpost-readme/
 

@@ -2,13 +2,26 @@
 #  ___    _     _   __    _     ___   ___   ____  __   __
 # / / \  | | | | | / /`  | |_/ | |_) | |_) | |_  ( (` ( (`
 # \_\_\\ \_\_/ |_| \_\_, |_| \ |_|   |_| \ |_|__ _)_) _)_)
+#
+# Command-line blog client for Wordpress.
 
 require 'thor'
 require 'quickpress'
 
-# Command line interface above the `Quickpress` class.
+# Command-line interface to quickpress' features.
 #
-class QP < Thor
+# It uses `Thor` to implement commands on top of the
+# `Quickpress` class. All the actual functionalities
+# are there.
+#
+# Look out for `Thor`'s documentation to understand
+# these domain-specific methods (like `desc`,
+# `option` and such).
+#
+# @note Those `\x5` on the long descriptions are to force
+#       a line break - think of them as `<br />`s.
+#
+class QuickpressCLI < Thor
 
   # Global `--debug` flag
   class_option(:debug,
@@ -23,9 +36,17 @@ class QP < Thor
        'Creates a post on your Wordpress site')
 
   option('markup',
-         :banner  => "name",
+         :banner  => "NAME",
          :desc    => "markup language",
          :aliases => "-m")
+
+  option('title',
+         :desc    => "post title",
+         :aliases => "-t")
+
+  option('category',
+         :desc    => "categories",
+         :aliases => "-c")
 
   long_desc(<<-END).remove_starting!
     If FILENAME is given, will post it to your Wordpress site.
@@ -34,14 +55,21 @@ class QP < Thor
     \x5wait for you to write a post. After you save it, will post
     \x5that.
 
-    * Set default text editor with the `EDITOR` environment
-    \x5variable.
-    \x5* For a list of markup languages, do `qp markup-list`.
+    The --categories option allows you to specify several of
+    \x5them, just make sure they're comma-separated.
+    For example:
+
+    > qp new-post file.md -t "My Title" -c "cat1, cat2, cat3"
+
+    *Set default text editor with the `EDITOR` environment
+    \x5 variable.
+    \x5*For a list of markup languages to use with --markup,
+    \x5 do `qp markup-list`.
+    *Unexisting categories will be created automatically.
   END
 
   def new_post(filename=nil)
-    $options[:debug] = options[:debug]
-    $options[:markup] = options[:markup]
+    $options.merge! options
 
     Quickpress::new(:post, filename)
   end
@@ -61,7 +89,8 @@ class QP < Thor
   END
 
   def list_posts(ammount=0)
-    $options[:debug] = options[:debug]
+    $options.merge! options
+
     Quickpress::list(:post, ammount.to_i)
   end
 
@@ -93,8 +122,7 @@ class QP < Thor
   END
 
   def delete_post(ids)
-    $options[:debug] = options[:debug]
-    $options[:force] = options[:force]
+    $options.merge! options
 
     Quickpress::delete(:post, ids)
   end
@@ -107,9 +135,13 @@ class QP < Thor
        'Creates a page on your Wordpress site')
 
   option('markup',
-         :banner  => "name",
+         :banner  => "NAME",
          :desc    => "markup language",
          :aliases => "-m")
+
+  option('title',
+         :desc    => "page title",
+         :aliases => "-t")
 
   long_desc <<-END.remove_starting!
     If FILENAME is given, will send it as a page to your
@@ -119,14 +151,14 @@ class QP < Thor
     \x5wait for you to write a page. After you save it, will send
     \x5that.
 
-    * Set default text editor with the `EDITOR` environment
+    *Set default text editor with the `EDITOR` environment
     \x5  variable.
-    \x5* For a list of markup languages, do `qp list-markup`.
+    \x5*For a list of markup languages to use with --markup,
+    \x5do `qp markup-list`.
   END
 
   def new_page(filename=nil)
-    $options[:debug] = options[:debug]
-    $options[:markup] = options[:markup]
+    $options.merge! options
 
     Quickpress::new(:page, filename)
   end
@@ -146,7 +178,8 @@ class QP < Thor
   END
 
   def list_pages(ammount=0)
-    $options[:debug] = options[:debug]
+    $options.merge! options
+
     Quickpress::list(:page, ammount.to_i)
   end
 
@@ -177,8 +210,7 @@ class QP < Thor
   END
 
   def delete_page(ids)
-    $options[:debug] = options[:debug]
-    $options[:force] = options[:force]
+    $options.merge! options
 
     Quickpress::delete(:page, ids)
   end
@@ -202,7 +234,8 @@ class QP < Thor
   END
 
   def new_site(address=nil)
-    $options[:debug] = options[:debug]
+    $options.merge! options
+
     Quickpress::new_site address
   end
 
@@ -219,7 +252,8 @@ class QP < Thor
   END
 
   def list_sites
-    $options[:debug] = options[:debug]
+    $options.merge! options
+
     Quickpress::list_sites
   end
 
@@ -248,9 +282,8 @@ class QP < Thor
     > $ qp forget-site "11,24,69"
   END
 
-  def forget_site(ids)
-    $options[:debug] = options[:debug]
-    $options[:force] = options[:force]
+  def forget_site ids
+    $options.merge! options
 
     Quickpress::forget_site(ids)
   end
@@ -270,7 +303,8 @@ class QP < Thor
   END
 
   def use_site id
-    $options[:debug] = options[:debug]
+    $options.merge! options
+
     Quickpress::use_site(id.to_i)
   end
 
@@ -296,6 +330,8 @@ class QP < Thor
   END
 
   def list_markup
+    $options.merge! options
+
     Quickpress::list_markup
   end
 end
@@ -331,7 +367,7 @@ begin
   end
 
   Quickpress::config_init
-  QP.start ARGV
+  QuickpressCLI.start ARGV
 
   # Real mess of error-handling.
   # I wonder if there's a better way to do it.

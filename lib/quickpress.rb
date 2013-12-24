@@ -431,16 +431,24 @@ module Quickpress
     id, link = nil, nil
 
     if what == :post
-      title = CLI::get "Post title:"
 
-      puts "Existing blog categories:"
-      @@connection.categories.each { |c| puts "* #{c}" }
+      # User specified title/categories on command line?
+      title = $options[:title]
+      if title.nil?
+        title = CLI::get "Post title:"
+      end
 
-      puts "Use a comma-separated list (eg. 'cat1, cat2, cat3')"
-      puts "Tab-completion works."
-      puts "(will create non-existing categories automatically)"
+      categories = $options[:category]
+      if categories.nil?
+        puts "Existing blog categories:"
+        @@connection.categories.each { |c| puts "* #{c}" }
 
-      categories = CLI::tab_complete("Post categories:", @@connection.categories)
+        puts "Use a comma-separated list (eg. 'cat1, cat2, cat3')"
+        puts "Tab-completion works."
+        puts "(will create non-existing categories automatically)"
+
+        categories = CLI::tab_complete("Post categories:", @@connection.categories)
+      end
 
       cats = []
       categories.split(',').each { |c| cats << c.lstrip.strip }
@@ -458,7 +466,10 @@ module Quickpress
       puts "Post successful!"
 
     elsif what == :page
-      title = CLI::get "Page title:"
+      title = $options[:title]
+      if title.nil?
+        title = CLI::get "Page title:"
+      end
 
       CLI::with_status("Creating page...") do
 
@@ -527,6 +538,7 @@ module Quickpress
           @@connection.delete_page id.to_i
         end
       end
+      puts "Deleted!"
     end
   end
 
