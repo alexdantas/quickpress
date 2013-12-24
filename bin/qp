@@ -280,6 +280,8 @@ class QuickpressCLI < Thor
     \x5For example:
 
     > $ qp forget-site "11,24,69"
+
+    *It doesn't erase anything from the blog itself, don't worry
   END
 
   def forget_site ids
@@ -333,6 +335,24 @@ class QuickpressCLI < Thor
     $options.merge! options
 
     Quickpress::list_markup
+  end
+
+  #  __     __   _____  ____  __    ___   ___   _   ____  __
+  # / /`   / /\   | |  | |_  / /`_ / / \ | |_) | | | |_  ( (`
+  # \_\_, /_/--\  |_|  |_|__ \_\_/ \_\_/ |_| \ |_| |_|__ _)_)
+  #
+  #
+  desc('categories',
+       'Shows all posts\' categories on the Wordpress site')
+
+  long_desc <<-END.remove_starting!
+    Simply lists all possible categories withing the site.
+  END
+
+  def categories
+    $options.merge! options
+
+    Quickpress::list_categories
   end
 end
 

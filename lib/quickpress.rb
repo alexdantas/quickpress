@@ -36,7 +36,8 @@ module Quickpress
   ROOT_DIR    = File.expand_path "~/.config/quickpress"
   CONFIG_FILE = "#{ROOT_DIR}/config.yml"
 
-  @@inited = nil
+  @@inited = nil     # config
+  @@started = false  # overall
   @@ran_first_time = false
 
   # URL of the default site used to post.
@@ -422,6 +423,18 @@ module Quickpress
     end
   end
 
+  # Pretty-prints categories list.
+  def list_categories
+    Quickpress::startup
+
+    # Will show categories in columns of n
+    columns = 5
+    table = @@connection.categories.each_slice(columns).to_a
+
+    puts
+    Thor::Shell::Basic.new.print_table table
+  end
+
   # Actually sends post/page `filename` to the blog.
   def new_file(what, filename)
     Quickpress::startup
@@ -441,8 +454,8 @@ module Quickpress
       categories = $options[:category]
       if categories.nil?
         puts "Existing blog categories:"
-        @@connection.categories.each { |c| puts "* #{c}" }
-
+        Quickpress::list_categories
+        puts
         puts "Use a comma-separated list (eg. 'cat1, cat2, cat3')"
         puts "Tab-completion works."
         puts "(will create non-existing categories automatically)"
@@ -588,6 +601,8 @@ module Quickpress
   # Initializes everything based on the config file or
   # simply by asking the user.
   def startup
+    return if @started
+
     Quickpress::first_time if @@default_site.nil?
 
     puts "Using site '#{@@default_site}'"
@@ -597,6 +612,7 @@ module Quickpress
     CLI::with_status("Connecting...") do
       @@connection ||= Wordpress.new(@@default_site, @@username, @@password)
     end
+    @started = true
   end
 
   # Gets username and password.
