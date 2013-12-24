@@ -149,8 +149,48 @@ module Quickpress
       options = @client.setOptions
 
       options.map { |o| [o[0], o[1]["desc"], o[1]["value"]] }
+
     end
 
+    # Returns all users currently registered on the blog.
+    #
+    # It's an Array of two-element Arrays:
+    #
+    # 1. Wordpress' internal info name
+    # 2. It's value
+    def get_users
+      users = @client.getUsers
+
+      # Replacing XML-RPC's ugly DateTime class
+      # with Ruby's Time
+      users.each do |u|
+        u["registered"] = u["registered"].to_time
+      end
+
+      users.map {|u| u.to_a}
+    end
+
+    # Returns comment counts according to their status.
+    # It's an Array of two elements:
+    #
+    # 1. Wordpress' internal status name
+    # 2. Comment counts on that status
+    #
+    def get_comment_status
+      status = @client.getCommentCount
+      status.to_a
+    end
+
+    # Returns categories and how many posts they have.
+    # It's an Array of two elements:
+    #
+    # 1. Category name
+    # 2. Post count
+    #
+    def get_category_status
+      status = @client.getTerms(:taxonomy => 'category')
+      status.map { |s| [s["name"], s["count"]] }
+    end
   end
 end
 

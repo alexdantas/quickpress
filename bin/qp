@@ -337,10 +337,9 @@ class QuickpressCLI < Thor
     Quickpress::list_markup
   end
 
-  #  __     __   _____  ____  __    ___   ___   _   ____  __
-  # / /`   / /\   | |  | |_  / /`_ / / \ | |_) | | | |_  ( (`
-  # \_\_, /_/--\  |_|  |_|__ \_\_/ \_\_/ |_| \ |_| |_|__ _)_)
-  #
+  #  _     _   __  _____    __     __   _____  ____  __
+  # | |   | | ( (`  | |    / /`   / /\   | |  | |_  / /`_  __
+  # |_|__ |_| _)_)  |_|    \_\_, /_/--\  |_|  |_|__ \_\_/ (_()
   #
   desc('list-categories',
        'Shows all posts\' categories on the Wordpress site')
@@ -355,9 +354,9 @@ class QuickpressCLI < Thor
     Quickpress::list_categories
   end
 
-  #  ___   ___  _____  _   ___   _      __
-  # / / \ | |_)  | |  | | / / \ | |\ | ( (`
-  # \_\_/ |_|    |_|  |_| \_\_/ |_| \| _)_)
+  #  _     _   __  _____    ___   ___  _____  _   ___   _      __
+  # | |   | | ( (`  | |    / / \ | |_)  | |  | | / / \ | |\ | ( (`
+  # |_|__ |_| _)_)  |_|    \_\_/ |_|    |_|  |_| \_\_/ |_| \| _)_)
   #
   desc('list-options',
        'Dumps all Wordpress options of the site')
@@ -374,6 +373,66 @@ class QuickpressCLI < Thor
     $options.merge! options
 
     Quickpress::list_options
+  end
+
+  #  _     _   __  _____    _     __   ____  ___   __
+  # | |   | | ( (`  | |    | | | ( (` | |_  | |_) ( (`
+  # |_|__ |_| _)_)  |_|    \_\_/ _)_) |_|__ |_| \ _)_)
+  #
+  desc('list-users',
+       'Shows all users on the site')
+
+  long_desc <<-END.remove_starting!
+    Lists all users currently registered on the site, along with
+    \x5their personal info.
+  END
+
+  def list_users
+    $options.merge! options
+
+    Quickpress::list_users
+  end
+
+  #  __  _____   __   _____  _     __     __    ___   _
+  # ( (`  | |   / /\   | |  | | | ( (`   / /`  / / \ | |\/|  __
+  # _)_)  |_|  /_/--\  |_|  \_\_/ _)_)   \_\_, \_\_/ |_|  | (_()
+  #
+  desc('status-comments',
+       'Shows comment count according to their status')
+
+  long_desc <<-END.remove_starting!
+    Shows how many comments were:
+    \x5-Approved
+    \x5-Awaiting Moderation
+    \x5-On Spam Queue
+    \x5-Total Comment Count
+  END
+
+  def status_comments
+    $options.merge! options
+
+    Quickpress::status_comments
+  end
+
+  #  __  _____   __   _____  _     __     __     __   _____
+  # ( (`  | |   / /\   | |  | | | ( (`   / /`   / /\   | |   __
+  # _)_)  |_|  /_/--\  |_|  \_\_/ _)_)   \_\_, /_/--\  |_|  (_()
+  #
+  desc('status-categories',
+       'Shows post count according to each category')
+
+  option('non-empty',
+         :desc    => "don't show categories without posts",
+         :aliases => "-n")
+
+  long_desc <<-END.remove_starting!
+    Shows every existing category along with it's post count.
+  END
+
+  def status_categories
+    $options.merge! options
+
+    Quickpress::status_categories
   end
 
 end

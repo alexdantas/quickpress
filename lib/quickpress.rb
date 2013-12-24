@@ -446,6 +446,17 @@ module Quickpress
     Thor::Shell::Basic.new.print_table options
   end
 
+  # Pretty-prints all users currently registered on the site.
+  def list_users
+    Quickpress::startup
+    users = @@connection.get_users
+
+    users.each do |user|
+      puts
+      Thor::Shell::Basic.new.print_table user
+    end
+  end
+
   # Actually sends post/page `filename` to the blog.
   def new_file(what, filename)
     Quickpress::startup
@@ -604,6 +615,27 @@ module Quickpress
     @@supported_markup.each do |m|
       puts "* #{m[0]} (#{m[1]})"
     end
+  end
+
+  # Shows comment count according to their status.
+  def status_comments
+    Quickpress::startup
+    status = @@connection.get_comment_status
+
+    puts
+    Thor::Shell::Basic.new.print_table status
+  end
+
+  def status_categories
+    Quickpress::startup
+    status = @@connection.get_category_status
+
+    if $options[:"non-empty"]
+      status.reject! { |s| s[1].zero? }
+    end
+
+    puts
+    Thor::Shell::Basic.new.print_table status
   end
 
   private
