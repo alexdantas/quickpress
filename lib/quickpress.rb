@@ -6,6 +6,7 @@ require 'quickpress/version'
 require 'quickpress/wordpress'
 require 'quickpress/cli'
 require 'quickpress/options'
+require 'digest/md5'
 
 class String
   # Removes starting whitespace.
@@ -529,24 +530,24 @@ module Quickpress
   def edit(what, id, filename=nil)
     Quickpress::startup
 
+    # Get previous content
+    old_content = nil
+    if what == :post
+      post = @@connection.get_post id
+
+      old_content = post["post_content"]
+    else
+      page = @@connection.get_page id
+
+      old_content = page["post_content"]
+    end
+
     if filename.nil?
 
       # Get editor to open temporary file
       editor = ENV["EDITOR"]
       if editor.nil?
         editor = get("Which text editor we'll use?")
-      end
-
-      # Get previous content
-      old_content = nil
-      if what == :post
-        post = @@connection.get_post id
-
-        old_content = post["post_content"]
-      else
-        page = @@connection.get_page id
-
-        old_content = page["post_content"]
       end
 
       # Create draft file
@@ -563,13 +564,34 @@ module Quickpress
         exit 666
       end
 
+      tempfile.close  # Apparently, calling `tempfile.flush`
+      tempfile.open   # won't do it. Need to close and reopen.
+
+      md5old = Digest::MD5.hexdigest old_content
+      md5new = Digest::MD5.hexdigest tempfile.read
+
+      if (md5old == md5new) and (not $options[:force])
+        puts "Contents unchanged: skipping"
+        puts "(use --force if you want to do it anyway)"
+        return
+      end
+
       puts "File: '#{tempfile.path}'" if $options[:debug]
 
       edit_file(what, id, tempfile.path)
       tempfile.close
 
     else
-      # Post file and copy it to posted directory.
+
+      md5old = Digest::MD5.hexdigest old_content
+      md5new = Digest::MD5.hexdigest File.read(filename)
+
+      if (md5old == md5new) and (not $options[:force])
+        puts "Contents unchanged: skipping"
+        puts "(use --force if you want to do it anyway)"
+        return
+      end
+
       edit_file(what, id, filename)
     end
   end

@@ -22,6 +22,7 @@ require 'quickpress'
 #       a line break - think of them as `<br />`s.
 #
 class QuickpressCLI < Thor
+  package_name "Quickpress"
 
   # Global `--debug` flag
   class_option(:debug,
@@ -30,11 +31,13 @@ class QuickpressCLI < Thor
 
   class_option(:user,
                :desc => "Wordpress username",
-               :aliases => "-u")
+               :aliases => "-u",
+               :type => :string)
 
   class_option(:pass,
                :desc => "Wordpress password",
-               :aliases => "-p")
+               :aliases => "-p",
+               :type => :string)
 
   #  _      ____  _         ___   ___   __  _____
   # | |\ | | |_  \ \    /  | |_) / / \ ( (`  | |
@@ -46,15 +49,18 @@ class QuickpressCLI < Thor
   option('markup',
          :banner  => "NAME",
          :desc    => "markup language",
-         :aliases => "-m")
+         :aliases => "-m",
+         :type => :string)
 
   option('title',
          :desc    => "post title",
-         :aliases => "-t")
+         :aliases => "-t",
+         :type => :string)
 
   option('category',
          :desc    => "categories",
-         :aliases => "-c")
+         :aliases => "-c",
+         :type => :string)
 
   long_desc(<<-END).remove_starting!
     If FILENAME is given, will post it to your Wordpress site.
@@ -145,15 +151,23 @@ class QuickpressCLI < Thor
   option('markup',
          :banner  => "NAME",
          :desc    => "markup language",
-         :aliases => "-m")
+         :aliases => "-m",
+         :type => :string)
 
   option('title',
          :desc    => "post title",
-         :aliases => "-t")
+         :aliases => "-t",
+         :type => :string)
 
   option('category',
          :desc    => "categories",
-         :aliases => "-c")
+         :aliases => "-c",
+         :type => :string)
+
+  option('force',
+         :type => :boolean,
+         :desc    => "upload even if no changes were made",
+         :aliases => "-f")
 
   long_desc(<<-END).remove_starting!
     If FILENAME is given, will change the post with ID to
@@ -162,6 +176,10 @@ class QuickpressCLI < Thor
     If no FILENAME is set, will launch default text editor with
     \x5current contents of the post. After you save it, will post
     \x5that.
+
+    Quickpress compares the old content with the new. If no
+    \x5changes were made, skips uploading. If you want to
+    \x5do it anyway, use --force.
 
     You can specify title and categories just like in `new-post`.
     \x5Leave them blank to keep current values. For example:
@@ -190,11 +208,13 @@ class QuickpressCLI < Thor
   option('markup',
          :banner  => "NAME",
          :desc    => "markup language",
-         :aliases => "-m")
+         :aliases => "-m",
+         :type => :string)
 
   option('title',
          :desc    => "page title",
-         :aliases => "-t")
+         :aliases => "-t",
+         :type => :string)
 
   long_desc <<-END.remove_starting!
     If FILENAME is given, will send it as a page to your
@@ -278,11 +298,18 @@ class QuickpressCLI < Thor
   option('markup',
          :banner  => "NAME",
          :desc    => "markup language",
-         :aliases => "-m")
+         :aliases => "-m",
+         :type => :string)
 
   option('title',
          :desc    => "page title",
-         :aliases => "-t")
+         :aliases => "-t",
+         :type => :string)
+
+  option('force',
+         :type => :boolean,
+         :desc    => "upload even if no changes were made",
+         :aliases => "-f")
 
   long_desc(<<-END).remove_starting!
     If FILENAME is given, will change the page with ID to
@@ -291,6 +318,10 @@ class QuickpressCLI < Thor
     If no FILENAME is set, will launch default text editor with
     \x5current contents of the page. After you save it, will post
     \x5that.
+
+    Quickpress compares the old content with the new. If no
+    \x5changes were made, skips uploading. If you want to
+    \x5do it anyway, use --force.
 
     You can specify the title just like in `new-page`.
     \x5Leave it blank to keep current value. For example:
@@ -517,7 +548,8 @@ class QuickpressCLI < Thor
 
   option('non-empty',
          :desc    => "don't show categories without posts",
-         :aliases => "-n")
+         :aliases => "-n",
+         :type => :boolean)
 
   long_desc <<-END.remove_starting!
     Shows every existing category along with it's post count.
