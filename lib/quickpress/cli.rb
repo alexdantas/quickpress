@@ -18,11 +18,20 @@ module Quickpress
     #
     # This ensures that the string is not empty
     # and pre/post spaces are removed.
-    def get prompt
+    #
+    # If `allow_empty` is true, allows the user to
+    # type an empty input.
+    #
+    def get(prompt, allow_empty=false)
       print "#{prompt} "
 
       ret = ""
-      ret = $stdin.gets.lstrip.strip while ret.empty?
+
+      if allow_empty
+        ret = $stdin.gets.lstrip.strip
+      else
+        ret = $stdin.gets.lstrip.strip while ret.empty?
+      end
       ret
     end
 

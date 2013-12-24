@@ -66,15 +66,71 @@ module Quickpress
     # Sends a post/page to the Wordpress site.
     def post options
       id   = @client.newPost(:content => options)
-      link = @client.getPost(:post_id => id, :fields => [:link])["link"]
+
+      info = @client.getPost(:post_id => id,
+                             :fields => [:link])
+      link = info["link"]
 
       return id, link
     end
 
+    # Returns post with numerical `id`.
+    # It's a Hash with attributes/values.
+    #
     def get_post id
       @client.getPost(:post_id => id)
     end
 
+    # Edits post with numerical `id` to have `new_content`.
+    #
+    # If any of the arguments is nil, will keep their
+    # old values.
+    #
+    def edit_post(id, new_content="", new_title="", new_categories=[])
+      old_post = get_post id
+
+      new_content = old_post["post_content"] if new_content.empty?
+      new_title   = old_post["post_title"]   if new_title.empty?
+
+      if new_categories == []
+
+        # Filtering out terms that are not categories
+        terms = old_post["terms"].select { |t| t["taxonomy"] == "category" }
+
+        # Getting category names
+        cats = terms.map { |c| c["name"] }
+        new_categories = cats
+      end
+
+      @client.editPost(:post_id => id,
+                       :content => {
+                         :post_content => new_content,
+                         :post_title => new_title,
+                         :terms_names => {
+                           :category => new_categories
+                         }
+                       })
+      old_post["link"]
+    end
+
+    def edit_page(id, new_content="", new_title="")
+      old_page = get_page id
+
+      new_content = old_page["post_content"] if new_content.empty?
+      new_title   = old_page["post_title"]   if new_title.empty?
+
+      @client.editPost(:post_id => id,
+                       :filter => {
+                         :post_type => 'page'
+                       },
+                       :content => {
+                         :post_content => new_content,
+                         :post_title => new_title
+                       })
+      old_page["link"]
+    end
+
+    # Returns page with numerical `id`.
     def get_page id
       @client.getPost(:post_id => id,
                       :filter => {

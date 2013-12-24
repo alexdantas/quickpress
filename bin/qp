@@ -135,6 +135,51 @@ class QuickpressCLI < Thor
     Quickpress::delete(:post, ids)
   end
 
+  #  ____  ___   _  _____    ___   ___   __  _____
+  # | |_  | | \ | |  | |    | |_) / / \ ( (`  | |
+  # |_|__ |_|_/ |_|  |_|    |_|   \_\_/ _)_)  |_|
+  #
+  desc('edit-post ID [FILENAME]',
+       'Edits post already on Wordpress site')
+
+  option('markup',
+         :banner  => "NAME",
+         :desc    => "markup language",
+         :aliases => "-m")
+
+  option('title',
+         :desc    => "post title",
+         :aliases => "-t")
+
+  option('category',
+         :desc    => "categories",
+         :aliases => "-c")
+
+  long_desc(<<-END).remove_starting!
+    If FILENAME is given, will change the post with ID to
+    the content of that file.
+
+    If no FILENAME is set, will launch default text editor with
+    \x5current contents of the post. After you save it, will post
+    \x5that.
+
+    You can specify title and categories just like in `new-post`.
+    \x5Leave them blank to keep current values. For example:
+
+    > qp edit-post 666 file.md -t "" -c ""
+
+    That would mantain the current title and categories, but
+    edit the contents according to the file `file.md`.
+
+    See `new-post`, same notes there apply here.
+  END
+
+  def edit_post(id, filename=nil)
+    $options.merge! options
+
+    Quickpress::edit(:post, id.to_i, filename)
+  end
+
   #  _      ____  _         ___    __    __    ____
   # | |\ | | |_  \ \    /  | |_)  / /\  / /`_ | |_
   # |_| \| |_|__  \_\/\/   |_|   /_/--\ \_\_/ |_|__
@@ -221,6 +266,47 @@ class QuickpressCLI < Thor
     $options.merge! options
 
     Quickpress::delete(:page, ids)
+  end
+
+  #  ____  ___   _  _____    ___    __    __    ____
+  # | |_  | | \ | |  | |    | |_)  / /\  / /`_ | |_
+  # |_|__ |_|_/ |_|  |_|    |_|   /_/--\ \_\_/ |_|__
+  #
+  desc('edit-page ID [FILENAME]',
+       'Edits page already on Wordpress site')
+
+  option('markup',
+         :banner  => "NAME",
+         :desc    => "markup language",
+         :aliases => "-m")
+
+  option('title',
+         :desc    => "page title",
+         :aliases => "-t")
+
+  long_desc(<<-END).remove_starting!
+    If FILENAME is given, will change the page with ID to
+    the content of that file.
+
+    If no FILENAME is set, will launch default text editor with
+    \x5current contents of the page. After you save it, will post
+    \x5that.
+
+    You can specify the title just like in `new-page`.
+    \x5Leave it blank to keep current value. For example:
+
+    > qp edit-page 666 file.md -t ""
+
+    That would mantain the current title, but
+    \x5edit the contents according to the file `file.md`.
+
+    See `new-page`, same notes there apply here.
+  END
+
+  def edit_page(id, filename=nil)
+    $options.merge! options
+
+    Quickpress::edit(:page, id.to_i, filename)
   end
 
   #  _      ____  _         __   _  _____  ____

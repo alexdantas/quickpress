@@ -89,8 +89,10 @@ For more help and nice guides, check out [the wiki][wiki].
 
 ## Supported template engines
 
-Thanks to [Tilt][tilt], you can write on `quickpress` with several templating
-engines. Just be sure to have at least one *required gem* of your favorite
+Thanks to [Tilt][tilt], you can write on `quickpress` with
+several templating engines.
+
+Just be sure to have at least one *required gem* of your favorite
 *engine*.
 
 | Engine                  | File extensions       | Required gem               |
@@ -132,6 +134,9 @@ Quickpress uses [Thor][thor] for it's CLI interface and
 It was highly inspired by the [blogpost] tool - thanks
 a lot, Stuart Rackam!
 
+Quickpress follows the [Semantic Versioning standard][versioning],
+meaning that it increments versions in a MAJOR.MINOR.PATCH way.
+
 For now the source code is a mess.
 Any comments are well-appreciated.
 
@@ -163,5 +168,6 @@ Please take the time to visit any of the links below.
 [wiki]:https://github.com/alexdantas/quickpress/wiki
 [gem]:https://rubygems.org/gem/quickpress/
 [blogpost]:http://srackham.wordpress.com/blogpost-readme/
+[versioning]:http://semver.org/
 
 [![githalytics.com alpha](https://cruel-carlota.pagodabox.com/72dc86b8e7c376b54dabd5d33b42c774 "githalytics.com")](http://githalytics.com/alexdantas/quickpress)

@@ -523,6 +523,110 @@ module Quickpress
     END
   end
 
+  # Entrance for when we're editing a page or a post
+  # with numerical `id` (`what` says so).
+  #
+  def edit(what, id, filename=nil)
+    Quickpress::startup
+
+    if filename.nil?
+
+      # Get editor to open temporary file
+      editor = ENV["EDITOR"]
+      if editor.nil?
+        editor = get("Which text editor we'll use?")
+      end
+
+      # Get previous content
+      old_content = nil
+      if what == :post
+        post = @@connection.get_post id
+
+        old_content = post["post_content"]
+      else
+        page = @@connection.get_page id
+
+        old_content = page["post_content"]
+      end
+
+      # Create draft file
+      tempfile = Tempfile.new ['quickpress', '.html']
+      tempfile.write old_content
+      tempfile.flush
+
+      # Oh yeah, baby
+      `#{editor} #{tempfile.path}`
+
+      if tempfile.size.zero?
+        puts "Empty file: did nothing"
+        tempfile.close
+        exit 666
+      end
+
+      puts "File: '#{tempfile.path}'" if $options[:debug]
+
+      edit_file(what, id, tempfile.path)
+      tempfile.close
+
+    else
+      # Post file and copy it to posted directory.
+      edit_file(what, id, filename)
+    end
+  end
+
+  # Actually edits post/page `filename` to the blog.
+  def edit_file(what, id, filename)
+
+    html = Tilt.new(filename).render
+
+    link = nil
+
+    if what == :post
+
+      # User specified title/categories on command line?
+      title = $options[:title]
+      if title.nil?
+        title = CLI::get("New Post title:", true)
+      end
+
+      categories = $options[:category]
+      if categories.nil?
+        puts "Existing blog categories:"
+        Quickpress::list_categories
+        puts
+        puts "Use a comma-separated list (eg. 'cat1, cat2, cat3')"
+        puts "Tab-completion works."
+        puts "(will create non-existing categories automatically)"
+        puts "(leave empty to keep current categories)"
+
+        categories = CLI::tab_complete("Post categories:", @@connection.categories)
+      end
+
+      cats = []
+      categories.split(',').each { |c| cats << c.lstrip.strip }
+
+      CLI::with_status("Editing post...") do
+        link = @@connection.edit_post(id, html, title, categories)
+      end
+
+    elsif what == :page
+      title = $options[:title]
+      if title.nil?
+        title = CLI::get("New Page title:", true)
+      end
+
+      CLI::with_status("Editing Page...") do
+        link = @@connection.edit_page(id, html, title)
+      end
+    end
+
+    puts <<-END.remove_starting!
+      Edit successful!
+      link: #{link}
+    END
+  end
+
+
   # Deletes comma-separated list of posts/pages with `ids`.
   # A single number is ok too.
   def delete(what, ids)
