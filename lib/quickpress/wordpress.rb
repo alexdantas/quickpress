@@ -17,6 +17,9 @@ module Quickpress
     # All categories on blog
     attr_reader :categories
 
+    # Blog's options in a Hash. Need to call `get_options` first.
+    attr_reader :options
+
     # Yes it is
     VERY_LARGE_NUMBER = 2**31 - 1
 
@@ -44,15 +47,17 @@ module Quickpress
                                       :username => user,
                                       :password => pass)
 
-      # Actually connecting
-      options = @client.getOptions
+      # Actually connecting, takes a while
+      options = @client.getOptions(:options => ["blog_title",
+                                                "blog_tagline",
+                                                "blog_url"])
 
       @title   = options["blog_title"]["value"]
       @tagline = options["blog_tagline"]["value"]
       @url     = options["blog_url"]["value"]
 
       @categories = []
-      terms = @client.getTerms(:taxonomy => 'category')
+      terms = @client.getTerms(:taxonomy => "category")
       terms.each do |term|
         @categories << term["name"]
       end
@@ -98,15 +103,52 @@ module Quickpress
                        })
     end
 
+    # Deletes post with numerical `id`.
     def delete_post id
       @client.deletePost(:post_id => id)
     end
 
+    # Deletes page with numerical `id`.
     def delete_page id
       @client.deletePost(:post_id => id,
                          :filter => {
                            :post_type => 'page'
                          })
+    end
+
+    # Retrieves as much metadata about the blog as it can.
+    #
+    # Returns an array of 3-element arrays:
+    #
+    # 1. Wordpress' internal option name.
+    #    You must use it to set options. See `set_options`.
+    # 2. Human-readable description of the option.
+    # 3. Current value.
+    #
+    # The values are detailed here:
+    # http://codex.wordpress.org/Option_Reference
+    #
+    def get_options
+      options = @client.getOptions
+
+      options.map { |o| [o[0], o[1]["desc"], o[1]["value"]] }
+    end
+
+    # Sets the blog's options according to `new_options`
+    # hash.
+    # It points to an array with two elements:
+    #
+    # 1. Wordpress' internal option name.
+    #    See `get_options`.
+    # 2. It's new value.
+    #    See link on `get_options` for possible values.
+    #
+    # Returns the new options, the same way as `get_options`.
+    #
+    def set_options new_options
+      options = @client.setOptions
+
+      options.map { |o| [o[0], o[1]["desc"], o[1]["value"]] }
     end
 
   end

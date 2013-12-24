@@ -206,6 +206,7 @@ module Quickpress
 
         File.write(CONFIG_FILE, YAML.dump(settings))
       end
+      puts "Site added"
 
     rescue StandardError => e
       retry if e.message =~ /will retry/
@@ -304,6 +305,7 @@ module Quickpress
     end
 
     File.write(CONFIG_FILE, YAML.dump(settings))
+    puts "Forgotten"
 
     # Ooh, boy
     # We've just ran out of sites! Better delete that config file!
@@ -433,6 +435,15 @@ module Quickpress
 
     puts
     Thor::Shell::Basic.new.print_table table
+  end
+
+  # Pretty-prints all options of the Wordpress site.
+  def list_options
+    Quickpress::startup
+    options = @@connection.get_options
+
+    puts
+    Thor::Shell::Basic.new.print_table options
   end
 
   # Actually sends post/page `filename` to the blog.

@@ -342,18 +342,40 @@ class QuickpressCLI < Thor
   # \_\_, /_/--\  |_|  |_|__ \_\_/ \_\_/ |_| \ |_| |_|__ _)_)
   #
   #
-  desc('categories',
+  desc('list-categories',
        'Shows all posts\' categories on the Wordpress site')
 
   long_desc <<-END.remove_starting!
-    Simply lists all possible categories withing the site.
+    Simply lists all existing categories withing the site.
   END
 
-  def categories
+  def list_categories
     $options.merge! options
 
     Quickpress::list_categories
   end
+
+  #  ___   ___  _____  _   ___   _      __
+  # / / \ | |_)  | |  | | / / \ | |\ | ( (`
+  # \_\_/ |_|    |_|  |_| \_\_/ |_| \| _)_)
+  #
+  desc('list-options',
+       'Dumps all Wordpress options of the site')
+
+  long_desc <<-END.remove_starting!
+    Lists all options of the Wordpress site, with their current
+    \x5values.
+
+    They're all explained here:
+    http://codex.wordpress.org/Option_Reference
+  END
+
+  def list_options
+    $options.merge! options
+
+    Quickpress::list_options
+  end
+
 end
 
 #  ___   ____  __    _   _
@@ -414,6 +436,7 @@ rescue XMLRPC::FaultException => e
   else
     $stderr.puts
     $stderr.puts e.message
+    $stderr.puts e.backtrace if $options[:debug]
   end
   exit 666
 
@@ -424,6 +447,8 @@ rescue ArgumentError => arg
             Please use `http` or `https`.
         END
     exit 666
+  else
+    $stderr.puts arg.backtrace if $options[:debug]
   end
 
 rescue Interrupt => i
