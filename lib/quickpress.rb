@@ -658,13 +658,25 @@ module Quickpress
     @started = true
   end
 
-  # Gets username and password.
+  # Gets username and password for the Wordpress site.
   #
-  # First, try getting from environment variables
-  # `QP_USERNAME` and `QP_PASSWORD`.
+  # There's three ways of authenticating,
+  # in order of importance:
   #
-  # If that fails, asks to the user.
+  # 1. Command-line options.
+  #    User can specify user/pass with the `-u` and `-p`
+  #    options, overrides everything else.
+  # 2. Environment variables.
+  #    Whatever's inside `QP_USERNAME` and `QP_PASSWORD`
+  #    envvars will be used.
+  # 3. Ask the user.
+  #    If all else fails, we'll ask the user for
+  #    username/password.
+  #
   def authenticate
+    @@username ||= $options[:user]
+    @@password ||= $options[:pass]
+
     @@username ||= ENV["QP_USERNAME"]
     @@password ||= ENV["QP_PASSWORD"]
 

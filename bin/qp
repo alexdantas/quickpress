@@ -28,6 +28,14 @@ class QuickpressCLI < Thor
                :desc => "debugging mode",
                :type => :boolean)
 
+  class_option(:user,
+               :desc => "Wordpress username",
+               :aliases => "-u")
+
+  class_option(:pass,
+               :desc => "Wordpress password",
+               :aliases => "-p")
+
   #  _      ____  _         ___   ___   __  _____
   # | |\ | | |_  \ \    /  | |_) / / \ ( (`  | |
   # |_| \| |_|__  \_\/\/   |_|   \_\_/ _)_)  |_|

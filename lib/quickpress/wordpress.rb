@@ -167,7 +167,7 @@ module Quickpress
         u["registered"] = u["registered"].to_time
       end
 
-      users.map {|u| u.to_a}
+      users.map { |u| u.to_a }
     end
 
     # Returns comment counts according to their status.
@@ -178,6 +178,7 @@ module Quickpress
     #
     def get_comment_status
       status = @client.getCommentCount
+
       status.to_a
     end
 
@@ -189,7 +190,8 @@ module Quickpress
     #
     def get_category_status
       status = @client.getTerms(:taxonomy => 'category')
-      status.map { |s| [s["name"], s["count"]] }
+
+      status.map { |s| [s["name"], s["count"]] } # all we need
     end
   end
 end
