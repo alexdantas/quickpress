@@ -70,16 +70,17 @@ class QuickpressCLI < Thor
     \x5that.
 
     The --categories option allows you to specify several of
-    \x5them, just make sure they're comma-separated.
-    For example:
+    \x5them, just make sure they're comma-separated. For example:
 
-    > qp new-post file.md -t "My Title" -c "cat1, cat2, cat3"
+    $ qp new-post file.md -t "My Title" -c "cat1, cat2, cat3"
 
-    *Set default text editor with the `EDITOR` environment
-    \x5 variable.
-    \x5*For a list of markup languages to use with --markup,
-    \x5 do `qp markup-list`.
-    *Unexisting categories will be created automatically.
+    Notes:
+
+    * Set default text editor with the `EDITOR` environment variable.
+
+    * For a list of languages to use with --markup, do `qp markup-list`.
+
+    * Unexisting categories will be created automatically.
   END
 
   def new_post(filename=nil)
@@ -96,10 +97,13 @@ class QuickpressCLI < Thor
        'Shows last posts from Wordpress site')
 
   long_desc <<-END.remove_starting!
-    If COUNT is given, will show last COUNT posts,
-    \x5most recent first.
+    If COUNT is given, will show last COUNT posts.
 
     If no COUNT is given, will show all posts.
+
+    Notes:
+
+    * Posts are shown in order of old first, recent last.
   END
 
   def list_posts(ammount=0)
@@ -123,16 +127,14 @@ class QuickpressCLI < Thor
   long_desc(<<-END).remove_starting!
     Deletes the post with numerical id equal to ID.
 
-    To see IDs, use `qp list-posts`.
-
     You can specify multiple IDs, just make sure to
-    \x5keep them apart with commas.
+    \x5keep them apart with commas. For example:
 
-    For example:
+    $ qp delete-post "4,8,15,16,23,42"
 
-    > $ qp delete-post "4,8,15,16,23,42"
+    Notes:
 
-    If the post doesn't exist, do nothing.
+    * To see IDs, use `qp list-posts`.
   END
 
   def delete_post(ids)
@@ -170,26 +172,25 @@ class QuickpressCLI < Thor
          :aliases => "-f")
 
   long_desc(<<-END).remove_starting!
-    If FILENAME is given, will change the post with ID to
-    the content of that file.
+    If FILENAME is given, will make the post with ID to
+    \x5have the contents of that file.
 
-    If no FILENAME is set, will launch default text editor with
-    \x5current contents of the post. After you save it, will post
-    \x5that.
+    If no FILENAME is set, will launch your default text editor.
+    \x5with current contents of the post. After saving it,
+    \x5will post that.
 
-    Quickpress compares the old content with the new. If no
-    \x5changes were made, skips uploading. If you want to
-    \x5do it anyway, use --force.
+    Quickpress compares the old content with the new.
+    \x5If no changes were made, skips uploading.
+    \x5If you want to do it anyway, use the --force (pun intended).
 
     You can specify title and categories just like in `new-post`.
     \x5Leave them blank to keep current values. For example:
 
-    > qp edit-post 666 file.md -t "" -c ""
+    $ qp edit-post 666 file.md -t "" -c ""
 
-    That would mantain the current title and categories, but
-    edit the contents according to the file `file.md`.
+    That would mantain the current title and categories.
 
-    See `new-post`, same notes there apply here.
+    See `qp new-post`, same notes apply here.
   END
 
   def edit_post(id, filename=nil)
@@ -224,10 +225,11 @@ class QuickpressCLI < Thor
     \x5wait for you to write a page. After you save it, will send
     \x5that.
 
-    *Set default text editor with the `EDITOR` environment
-    \x5  variable.
-    \x5*For a list of markup languages to use with --markup,
-    \x5do `qp markup-list`.
+    Notes:
+
+    * Set default text editor with the `EDITOR` environment variable.
+
+    * For a list of languages to use with --markup, do `qp markup-list`.
   END
 
   def new_page(filename=nil)
@@ -244,10 +246,13 @@ class QuickpressCLI < Thor
        'Shows last pages from Wordpress site')
 
   long_desc <<-END.remove_starting!
-    If COUNT is given, will show last COUNT pages,
-    \x5most recent first.
+    If COUNT is given, will show last COUNT pages.
 
     If no COUNT is given, will show all pages.
+
+    Notes:
+
+    * Pages are shown in order of old first, recent last.
   END
 
   def list_pages(ammount=0)
@@ -271,15 +276,14 @@ class QuickpressCLI < Thor
   long_desc(<<-END).remove_starting!
     Deletes the page with numerical id equal to ID.
 
-    To see IDs, use `qp list-pages`.
-
     You can specify multiple IDs, just make sure to
-    \x5keep them apart with commas.
-    \x5For example:
+    \x5keep them apart with commas. For example:
 
-    > $ qp delete-page "42,666,1337"
+    $ qp delete-page "42,666,1337"
 
-    If the page doesn't exist, do nothing.
+    Notes:
+
+    * To see IDs, use `qp list-pages`.
   END
 
   def delete_page(ids)
@@ -312,24 +316,23 @@ class QuickpressCLI < Thor
          :aliases => "-f")
 
   long_desc(<<-END).remove_starting!
-    If FILENAME is given, will change the page with ID to
-    the content of that file.
+    If FILENAME is given, will make the page with ID to
+    \x5have the contents of that file.
 
-    If no FILENAME is set, will launch default text editor with
-    \x5current contents of the page. After you save it, will post
-    \x5that.
+    If no FILENAME is set, will launch your default text editor.
+    \x5with current contents of the page. After saving it,
+    \x5will send that.
 
-    Quickpress compares the old content with the new. If no
-    \x5changes were made, skips uploading. If you want to
-    \x5do it anyway, use --force.
+    Quickpress compares the old content with the new.
+    \x5If no changes were made, skips uploading.
+    \x5If you want to do it anyway, use the --force (pun intended).
 
     You can specify the title just like in `new-page`.
     \x5Leave it blank to keep current value. For example:
 
-    > qp edit-page 666 file.md -t ""
+    $ qp edit-page 666 file.md -t ""
 
-    That would mantain the current title, but
-    \x5edit the contents according to the file `file.md`.
+    That would mantain the current title.
 
     See `new-page`, same notes there apply here.
   END
@@ -350,12 +353,16 @@ class QuickpressCLI < Thor
   long_desc <<-END.remove_starting!
     If ADDRESS is provided, add it to quickpress.
 
-    If not, will prompt you for an address, username and password.
-    \x5If everything's correct, will add that site to quickpress.
+    If not, asks you for it. If everything's correct,
+    \x5will add that site to quickpress.
 
-    By adding we mean you'll be able to do all commands on it.
+    By "adding" we mean you'll be able to do all commands on it.
 
-    To see all sites added to quickpress, see `qp list-sites`.
+    Notes:
+
+    * To see all sites added to quickpress, see `qp list-sites`.
+
+    * To see all possible commands, simply use `qp`.
   END
 
   def new_site(address=nil)
@@ -373,7 +380,9 @@ class QuickpressCLI < Thor
 
   long_desc <<-END.remove_starting!
     Will list all sites you've added with `qp new-site`.
-    \x5If no COUNT is given, will show all pages.
+
+    They'll each have an id next to them. It is used by both
+    \x5`use-site` and `forget-site`.
   END
 
   def list_sites
@@ -398,15 +407,16 @@ class QuickpressCLI < Thor
     Makes quickpress stop managing the site with numerical
     \x5id equal to ID.
 
-    To see IDs, use `qp list-sites`.
-
     You can specify multiple IDs, just make sure to
-    \x5keep them apart with commas.
-    \x5For example:
+    \x5keep them apart with commas. For example:
 
-    > $ qp forget-site "11,24,69"
+    $ qp forget-site "11,24,69"
 
-    *It doesn't erase anything from the blog itself, don't worry
+    Notes:
+
+    * To see IDs, use `qp list-sites`.
+
+    * It doesn't do anything to the blog, don't worry
   END
 
   def forget_site ids
@@ -423,10 +433,11 @@ class QuickpressCLI < Thor
        'Sets site with ID as default')
 
   long_desc(<<-END).remove_starting!
-    From now on will do actions on the site with numerical
-    \x5id equal to ID.
+    From now on, all commands will affect the site with numerical ID.
 
-    To see IDs, use `qp list-sites`.
+    Notes:
+
+    * To see IDs, use `qp list-sites`.
   END
 
   def use_site id
@@ -443,17 +454,18 @@ class QuickpressCLI < Thor
        'Show all supported templating languages')
 
   long_desc(<<-END).remove_starting!
-    Lists all templating languages supported by quickpress.
+    Lists all templating languages supported by quickpress,
+    \x5together with their file extensions.
 
-    You can use them with the `--markup` option when creating
+    You can use them with the --markup option when creating
     \x5new posts or pages.
 
-    > $ qp new-post --markup asciidoc
+    $ qp new-post --markup asciidoc
 
-    If you create a post/page with a file, they're implied
-    \x5based on it's filename extension.
 
-    > $ qp new-post filename.asciidoc
+    Notes:
+
+    * When you create a post/page using a file, the markup is implied by the filename extension.
   END
 
   def list_markup
@@ -487,11 +499,11 @@ class QuickpressCLI < Thor
        'Dumps all Wordpress options of the site')
 
   long_desc <<-END.remove_starting!
-    Lists all options of the Wordpress site, with their current
+    Lists settings of the Wordpress site, along with their current
     \x5values.
 
-    They're all explained here:
-    http://codex.wordpress.org/Option_Reference
+    There's a lot of them, all explained here:
+    \x5http://codex.wordpress.org/Option_Reference
   END
 
   def list_options
@@ -509,7 +521,7 @@ class QuickpressCLI < Thor
 
   long_desc <<-END.remove_starting!
     Lists all users currently registered on the site, along with
-    \x5their personal info.
+    \x5their personal info :)
   END
 
   def list_users
@@ -527,10 +539,11 @@ class QuickpressCLI < Thor
 
   long_desc <<-END.remove_starting!
     Shows how many comments were:
-    \x5-Approved
-    \x5-Awaiting Moderation
-    \x5-On Spam Queue
-    \x5-Total Comment Count
+
+    - Approved
+    \x5- Awaiting Moderation
+    \x5- Marked as Spam
+    \x5- Created on Total
   END
 
   def status_comments
@@ -552,7 +565,8 @@ class QuickpressCLI < Thor
          :type => :boolean)
 
   long_desc <<-END.remove_starting!
-    Shows every existing category along with it's post count.
+    Shows every existing category along with how many
+    \x5posts were made on them.
   END
 
   def status_categories
@@ -560,6 +574,91 @@ class QuickpressCLI < Thor
 
     Quickpress::status_categories
   end
+
+  #  ___    ___
+  # / / \  | |_)
+  # \_\_\\ |_|
+  #
+  # Overriding default message when user specify no arguments.
+  no_commands {
+  def self.qp
+    puts <<-END.remove_starting!
+      quickpress v#{Quickpress::VERSION}
+      Usage:
+      	qp COMMAND [OPTIONS]
+
+      Quickpress works with commands, just like `git(1)` or `bundle(1)`.
+      Here's a list with all of them:
+
+    END
+
+    # Will get all commands and pretty-print them into
+    # columns.
+    all = QuickpressCLI
+      .all_tasks                       # internal Thor method
+      .to_a.sort
+      .map { |c| c[0] }                # only need their names
+
+    all = all
+      .map { |c| c.gsub(/_/, '-') }    # replacing '_' with '-'
+      .each_slice(4)                   # splitting into columns
+      .to_a
+
+    Thor::Shell::Basic.new.print_table all
+
+    puts <<-END.remove_starting!
+
+      Use `qp help` to show most used commands and their basic description.
+      Use `qp help <command>` to get more info on a specific command.
+
+      Config directory: `~/.config/quickpress/`
+
+      Homepage: http://quickpress.alexdantas.net
+      Contact:  Alexandre Dantas <eu@alexdantas.net>
+
+      This software is licensed under the GNU General Public License
+      version 3 or later.
+    END
+  end
+  #  _     ____  _     ___
+  # | |_| | |_  | |   | |_)
+  # |_| | |_|__ |_|__ |_|
+  #
+  # Overriding default help message - shell and subcommands
+  # are Thor's internals.
+  def self.show_help
+
+    puts <<-END
+quickpress v#{Quickpress::VERSION}
+The most commonly used commands are:
+
+  qp new-site        # Starts managing a new Wordpress site
+  qp use-site        # Sets site to manage from now on
+  qp new-post        # Creates a post on your Wordpress site
+  qp list-posts      # Shows last posts from Wordpress site
+  qp delete-post     # Deletes post by numerical ID
+  qp edit-post       # Edits post already on Wordpress site
+  qp list-markup     # Show formats on which you can write posts
+  qp status-comments # Display comment count according to status
+
+Here's some examples:
+
+  # Uploads post within `file.md` (Markdown) with
+  # title and categories
+  qp new-post file.md -t "Title" -c "Cat1, Cat2"
+
+  # Uploads page within `file.adoc` (Asciidoc) with
+  # username and password
+  qp new-page file.adoc -u username -p password
+
+  # Calls your default text editor with the contents of
+  # the post of id 12. After you save, uploads the changes.
+  qp edit-post 12
+
+Use `qp` to show all commands and program info.
+Use `qp help <command>` for info on a specific command.
+    END
+  end}
 
 end
 
@@ -569,31 +668,16 @@ end
 #
 begin
   if ARGV.empty?
-    puts <<-END.remove_starting!
-      quickpress v#{Quickpress::VERSION}
-      Cheatsheet:
+    QuickpressCLI.qp
+    exit
 
-      	$ qp {new,delete}-{post,page}
-      	$ qp list-(post|page|site)s
-      	$ qp {new,forget}-site
-      	$ qp use-site
-      	$ qp list-markup
-
-      All commands: `qp help`
-      Command info: `qp help (command)`
-
-      Config directory: `~/.config/quickpress/`
-
-      homepage: http://quickpress.alexdantas.net
-      mailto:   eu@alexdantas.net
-
-      This software is licensed under the
-      GNU General Public License version 3 or later.
-    END
+  elsif (ARGV.size == 1) and (ARGV.last == "help")
+    QuickpressCLI.show_help
     exit
   end
 
   Quickpress::config_init
+
   QuickpressCLI.start ARGV
 
   # Real mess of error-handling.
