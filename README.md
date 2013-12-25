@@ -164,6 +164,12 @@ Here's how you can do it:
 An easy way is to help on documentation. For that, simply head up
 for [the wiki][wiki] and start editing things.
 
+### Contributors
+
+These are people who've added to the project, in order of arrival:
+
+* **Hanmac** on *Freenode's #ruby*: Fixed issue #1.
+
 ## Contact
 
 Hi, I'm Alexandre Dantas! Thanks for having interest in this project.
@@ -177,7 +183,7 @@ Please take the time to visit any of the links below.
 [thor]:http://whatisthor.com/
 [rubypress]:https://github.com/zachfeldman/rubypress
 [wiki]:https://github.com/alexdantas/quickpress/wiki
-[gem]:https://rubygems.org/gem/quickpress/
+[gem]:https://rubygems.org/gems/quickpress/
 [blogpost]:http://srackham.wordpress.com/blogpost-readme/
 [versioning]:http://semver.org/
 

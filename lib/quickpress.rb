@@ -7,6 +7,7 @@ require 'quickpress/wordpress'
 require 'quickpress/cli'
 require 'quickpress/options'
 require 'digest/md5'
+require 'net/http'
 
 class String
   # Removes starting whitespace.
