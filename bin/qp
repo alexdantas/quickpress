@@ -686,14 +686,6 @@ begin
   # Well, at least I'm not polluting the whole code
   # with this `rescue` stuff.
 
-rescue Net::ReadTimeout
-  $stderr.puts <<-END.remove_starting!
-
-    * Connection took too long.
-      Check your internet settings and try again.
-  END
-  exit 666
-
 rescue XMLRPC::FaultException => e
   if e.message =~ /Incorrect username or password/
 
@@ -709,6 +701,15 @@ rescue XMLRPC::FaultException => e
   end
   exit 666
 
+# Ruby 1.9.x don't have Net::ReadTimeout - spits out a NameError
+rescue Net.const_defined?(:ReadTimeout) ? Net::ReadTimeout : EOFError
+  $stderr.puts <<-END.remove_starting!
+
+    * Connection took too long.
+      Check your internet settings and try again.
+  END
+  exit 666
+  
 rescue ArgumentError => arg
   if arg.message =~ /Wrong protocol specified/
     $stderr.puts <<-END.remove_starting!
