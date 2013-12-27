@@ -472,7 +472,8 @@ module Quickpress
       title = CLI::get "Post Title:"
     end
 
-    date = Quickpress::date($options[:date])
+    date = Quickpress::date $options[:date]
+    status = Quickpress::status $options[:status]
 
     if what == :post
 
@@ -497,6 +498,7 @@ module Quickpress
                                      :post_date    => date,
                                      :post_title   => title,
                                      :post_content => html,
+                                     :post_status  => status,
                                      :terms_names  => {
                                        :category => cats
                                      })
@@ -511,6 +513,7 @@ module Quickpress
                                      :post_date    => [],
                                      :post_title   => title,
                                      :post_content => html,
+                                     :post_status  => status,
                                      :post_type    => 'page')
       end
       puts "Page created!"
@@ -591,6 +594,21 @@ module Quickpress
     end
 
     time
+  end
+
+  # Checks if `string` is a valid status for a post.
+  #
+  # @note Falls back to `publish`.
+  def status(string=nil)
+    case string
+    when nil        then return "publish"
+    when /draft/i   then return string
+    when /publish/i then return string
+    when /private/i then return string
+    else
+      fail "* Invalid status format '#{format}'.\n"
+           "See `qp help new-post` for details."
+    end
   end
 
   # Entrance for when we're editing a page or a post
@@ -678,6 +696,8 @@ module Quickpress
     end
 
     date = Quickpress::date($options[:date])
+
+    status = Quickpress::status $options[:status]
 
     if what == :post
 

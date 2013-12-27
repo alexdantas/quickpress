@@ -68,6 +68,11 @@ class QuickpressCLI < Thor
          :aliases => "-d",
          :type => :string)
 
+  option('status',
+         :desc    => "status of the post",
+         :aliases => "-s",
+         :type => :string)
+
   long_desc(<<-END).remove_starting!
     If FILENAME is given, will post it to your Wordpress site.
 
@@ -93,6 +98,13 @@ class QuickpressCLI < Thor
     \x5remaining ones from the current date. For example:
 
     $ qp new-post file.adoc -d "15:24 22-4"
+
+    The --status option says how a post will behave when uploaded.
+    \x5Valid options are the following (case insensitive):
+
+    \x5 * draft: visible only on admin area
+    \x5 * publish: (default) post right away (or on --date)
+    \x5 * private: like "publish", but visible only to you
 
     Notes:
 
@@ -252,6 +264,11 @@ class QuickpressCLI < Thor
          :aliases => "-d",
          :type => :string)
 
+  option('status',
+         :desc    => "status of the post",
+         :aliases => "-s",
+         :type => :string)
+
   long_desc <<-END.remove_starting!
     If FILENAME is given, will send it as a page to your
     \x5Wordpress site.
@@ -263,6 +280,9 @@ class QuickpressCLI < Thor
     The --date option allows you to set a date on which the page
     \x5will be created. See help on `qp new-post` to know
     \x5the format of the date string.
+
+    The --status option says how a post will behave when uploaded.
+    \x5See help on `qp new-post` to see valid options.
 
     Notes:
 
