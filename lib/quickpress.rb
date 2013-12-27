@@ -692,10 +692,24 @@ module Quickpress
 
     link = nil
 
+    old_title = nil
+    case what
+    when :post
+      post = @@wp.get_post id
+      old_title = post["post_title"]
+
+    when :page
+      page = @@wp.get_page id
+      old_title = page["post_title"]
+    end
+
     title = $options[:title]
     if title.nil?
       title = CLI::get("New Title:", true)
     end
+
+    # Falling back to current title if empty
+    title = old_title if title.empty?
 
     date   = Quickpress::date $options[:date]
     status = Quickpress::status $options[:status]
