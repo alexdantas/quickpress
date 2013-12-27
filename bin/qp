@@ -62,6 +62,12 @@ class QuickpressCLI < Thor
          :aliases => "-c",
          :type => :string)
 
+  option('date',
+         :banner  => "\"date format (see below)\"",
+         :desc    => "date to create post",
+         :aliases => "-d",
+         :type => :string)
+
   long_desc(<<-END).remove_starting!
     If FILENAME is given, will post it to your Wordpress site.
 
@@ -73,6 +79,20 @@ class QuickpressCLI < Thor
     \x5them, just make sure they're comma-separated. For example:
 
     $ qp new-post file.md -t "My Title" -c "cat1, cat2, cat3"
+
+    The --date option allows you to set a date on which the post
+    \x5will be created. It is a string with a format that MUST be
+    \x5one of the following:
+
+    \x5 1. "minute:hour"
+    \x5 2. "minute:hour day"
+    \x5 3. "minute:hour day-month"
+    \x5 4. "minute:hour day-month-year"
+
+    If one of the fields is not specified, will get the
+    \x5remaining ones from the current date. For example:
+
+    $ qp new-post file.adoc -d "15:24 22-4"
 
     Notes:
 
@@ -171,6 +191,12 @@ class QuickpressCLI < Thor
          :desc    => "upload even if no changes were made",
          :aliases => "-f")
 
+  option('date',
+         :banner  => "\"date format (see below)\"",
+         :desc    => "date to create post",
+         :aliases => "-d",
+         :type => :string)
+
   long_desc(<<-END).remove_starting!
     If FILENAME is given, will make the post with ID to
     \x5have the contents of that file.
@@ -189,6 +215,9 @@ class QuickpressCLI < Thor
     $ qp edit-post 666 file.md -t "" -c ""
 
     That would mantain the current title and categories.
+
+    The --date option allows you to set a new date for this post.
+    \x5See `qp new-post` for info on the string format.
 
     See `qp new-post`, same notes apply here.
   END
@@ -217,6 +246,12 @@ class QuickpressCLI < Thor
          :aliases => "-t",
          :type => :string)
 
+  option('date',
+         :banner  => "\"date format (see below)\"",
+         :desc    => "date to create post",
+         :aliases => "-d",
+         :type => :string)
+
   long_desc <<-END.remove_starting!
     If FILENAME is given, will send it as a page to your
     \x5Wordpress site.
@@ -224,6 +259,10 @@ class QuickpressCLI < Thor
     If no FILENAME is set, will launch default text editor and
     \x5wait for you to write a page. After you save it, will send
     \x5that.
+
+    The --date option allows you to set a date on which the page
+    \x5will be created. See help on `qp new-post` to know
+    \x5the format of the date string.
 
     Notes:
 
@@ -315,6 +354,12 @@ class QuickpressCLI < Thor
          :desc    => "upload even if no changes were made",
          :aliases => "-f")
 
+  option('date',
+         :banner  => "\"date format (see below)\"",
+         :desc    => "date to create post",
+         :aliases => "-d",
+         :type => :string)
+
   long_desc(<<-END).remove_starting!
     If FILENAME is given, will make the page with ID to
     \x5have the contents of that file.
@@ -333,6 +378,9 @@ class QuickpressCLI < Thor
     $ qp edit-page 666 file.md -t ""
 
     That would mantain the current title.
+
+    The --date option allows you to set a new date for this page.
+    \x5See help on `qp new-post` for info on the string format.
 
     See `new-page`, same notes there apply here.
   END
@@ -709,7 +757,7 @@ rescue Net.const_defined?(:ReadTimeout) ? Net::ReadTimeout : EOFError
       Check your internet settings and try again.
   END
   exit 666
-  
+
 rescue ArgumentError => arg
   if arg.message =~ /Wrong protocol specified/
     $stderr.puts <<-END.remove_starting!
@@ -717,6 +765,14 @@ rescue ArgumentError => arg
             Please use `http` or `https`.
         END
     exit 666
+
+  elsif arg.message =~ /argument out of range/
+    $stderr.puts <<-END.remove_starting!
+          * Invalid date specified.
+            Check `qp new-post` for valid date format.
+        END
+    exit 666
+
   else
     $stderr.puts arg.backtrace if $options[:debug]
   end
@@ -734,6 +790,10 @@ rescue LoadError => l
     * Couldn't load '#{l.path}'.
       Make sure it's gem is installed and try again.
   END
+  exit 666
+
+rescue String => s
+  $stderr.puts s
   exit 666
 
 rescue StandardError => e

@@ -467,13 +467,14 @@ module Quickpress
     # If successful, will store page id and link
     id, link = nil, nil
 
-    if what == :post
+    title = $options[:title]
+    if title.nil?
+      title = CLI::get "Post Title:"
+    end
 
-      # User specified title/categories on command line?
-      title = $options[:title]
-      if title.nil?
-        title = CLI::get "Post title:"
-      end
+    date = Quickpress::date($options[:date])
+
+    if what == :post
 
       categories = $options[:category]
       if categories.nil?
@@ -493,7 +494,7 @@ module Quickpress
       CLI::with_status("Posting...") do
 
         id, link = @@connection.post(:post_status  => 'publish',
-                                     :post_date    => Time.now,
+                                     :post_date    => date,
                                      :post_title   => title,
                                      :post_content => html,
                                      :terms_names  => {
@@ -503,15 +504,11 @@ module Quickpress
       puts "Post successful!"
 
     elsif what == :page
-      title = $options[:title]
-      if title.nil?
-        title = CLI::get "Page title:"
-      end
 
       CLI::with_status("Creating page...") do
 
         id, link = @@connection.post(:post_status  => 'publish',
-                                     :post_date    => Time.now,
+                                     :post_date    => [],
                                      :post_title   => title,
                                      :post_content => html,
                                      :post_type    => 'page')
@@ -523,6 +520,77 @@ module Quickpress
       id:   #{id}
       link: #{link}
     END
+  end
+
+  # Returns a Time Object according to String `format`.
+  #
+  # The acceptable date formats are:
+  #
+  # * `minute:hour`
+  # * `minute:hour day`
+  # * `minute:hour day-month`
+  # * `minute:hour day-month-year`
+  #
+  # Whenever there's a non-specified field
+  # (like year, for example) we'll get from the current
+  # date.
+  #
+  # So if you only provide `minute:hour`, it'll return
+  # a Time Object with the current day, month and year.
+  #
+  def date(format=nil)
+
+    # When sending [] as `:post_date` it tells Wordpress
+    # to post instantly.
+    return [] if format.nil?
+
+    # Allowed date formats
+    full_fmt  = /(\d{1,2}):(\d{2}) (\d{1,2})-(\d{1,2})-(\d{4})/
+    month_fmt = /(\d{1,2}):(\d{2}) (\d{1,2})-(\d{1,2})/
+    day_fmt   = /(\d{1,2}):(\d{2}) (\d{1,2})/
+    hours_fmt = /(\d{1,2}):(\d{2})/
+
+    time = nil
+    case format
+    when full_fmt
+      year   = format[full_fmt, 5].to_i
+      month  = format[full_fmt, 4].to_i
+      day    = format[full_fmt, 3].to_i
+      minute = format[full_fmt, 2].to_i
+      hour   = format[full_fmt, 1].to_i
+
+      time = Time.new(year, month, day, hour, minute)
+
+    when month_fmt then
+      month  = format[month_fmt, 4].to_i
+      day    = format[month_fmt, 3].to_i
+      minute = format[month_fmt, 2].to_i
+      hour   = format[month_fmt, 1].to_i
+
+      time = Time.new(Time.now.year,
+                      month, day, hour, minute)
+
+    when day_fmt then
+      day    = format[day_fmt, 3].to_i
+      minute = format[day_fmt, 2].to_i
+      hour   = format[day_fmt, 1].to_i
+
+      time = Time.new(Time.now.year, Time.now.month,
+                      day, hour, minute)
+
+    when hours_fmt then
+      minute = format[hours_fmt, 2].to_i
+      hour   = format[hours_fmt, 1].to_i
+
+      time = Time.new(Time.now.year, Time.now.month, Time.now.day,
+                      hour, minute)
+
+    else
+      fail "* Invalid data format '#{format}'.\n"
+            "See `qp help new-post` for details."
+    end
+
+    time
   end
 
   # Entrance for when we're editing a page or a post
@@ -604,13 +672,14 @@ module Quickpress
 
     link = nil
 
-    if what == :post
+    title = $options[:title]
+    if title.nil?
+      title = CLI::get("New Title:", true)
+    end
 
-      # User specified title/categories on command line?
-      title = $options[:title]
-      if title.nil?
-        title = CLI::get("New Post title:", true)
-      end
+    date = Quickpress::date($options[:date])
+
+    if what == :post
 
       categories = $options[:category]
       if categories.nil?
@@ -633,10 +702,6 @@ module Quickpress
       end
 
     elsif what == :page
-      title = $options[:title]
-      if title.nil?
-        title = CLI::get("New Page title:", true)
-      end
 
       CLI::with_status("Editing Page...") do
         link = @@connection.edit_page(id, html, title)
