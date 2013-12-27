@@ -732,8 +732,7 @@ module Quickpress
         categories = CLI::tab_complete("Post categories:", @@wp.categories)
       end
 
-      cats = []
-      categories.split(',').each { |c| cats << c.lstrip.strip }
+      cats = categories.split(',').map { |c| c.lstrip.strip }
 
       CLI::with_status("Editing post...") do
         link = @@wp.edit_post(:post_id => id,
@@ -742,7 +741,7 @@ module Quickpress
                                 :post_title => title,
                                 :post_status => status,
                                 :terms_names => {
-                                  :category => categories
+                                  :category => cats
                                 }
                               })
       end
