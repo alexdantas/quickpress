@@ -829,8 +829,8 @@ rescue StandardError => e
     $stderr.puts <<-END.remove_starting!
 
       * Connection error!
-        Either site doesn't exist or there's
-        something wrong with your internet connection.
+        Either the site doesn't exist or there's something
+        wrong with your internet connection.
     END
 
     if Quickpress::CLI::ask("Wanna retry?")

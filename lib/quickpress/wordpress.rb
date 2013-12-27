@@ -2,20 +2,15 @@ require 'rubypress'
 
 module Quickpress
 
-  # Handles calls to the Wordpress API
+  # Represents an instance of a Wordpress connection.
+  # Handles direct calls to the Wordpress API.
   #
   class Wordpress
-    # Blog title.
-    attr_reader :title
 
-    # Blog subtitle.
-    attr_reader :tagline
-
-    # Blog address
-    attr_reader :url
-
-    # All categories on blog
-    attr_reader :categories
+    attr_reader :title      # Blog title.
+    attr_reader :tagline    # Blog subtitle.
+    attr_reader :url        # Blog address
+    attr_reader :categories # All categories on blog
 
     # Blog's options in a Hash. Need to call `get_options` first.
     attr_reader :options
@@ -63,15 +58,44 @@ module Quickpress
       end
     end
 
-    # Sends a post/page to the Wordpress site.
-    def post options
-      id   = @client.newPost(:content => options)
+    # Sends a post/page to the Wordpress site with `options`.
+    #
+    # `options` is a Hash with the following fields:
+    #
+    # * :post_date    => Ruby Time Object (or `[]` for Time.now)
+    # * :post_title   => String
+    # * :post_content => String
+    # * :post_status  => 'publish'/'draft'/'private'
+    # * :post_type    => 'post'(default) / 'page'
+    #
+    # To Wordpress, Posts and Pages are the same thing.
+    # The only thing that makes them different is the
+    # option `:post_type`.
+    #
+    def new_post options
+      # Sending post
+      id = @client.newPost(:content => options)
 
+      # Getting link for it
       info = @client.getPost(:post_id => id,
-                             :fields => [:link])
+                             :fields  => [:link])
       link = info["link"]
 
       return id, link
+    end
+
+    # Edits post/page on the Wordpress site with `options`.
+    #
+    # Format is the same as Wordpress#new_post.
+    # Check it out.
+    #
+    def edit_post options
+
+      @client.editPost(options)
+      info = @client.getPost(:post_id => options[:post_id],
+                             :fields  => [:link])
+
+      info["link"]
     end
 
     # Returns post with numerical `id`.
@@ -81,63 +105,6 @@ module Quickpress
       @client.getPost(:post_id => id)
     end
 
-    # Edits post with numerical `id` to have `new_content`.
-    #
-    # If any of the arguments is nil, will keep their
-    # old values.
-    #
-    def edit_post(id, new_content="", new_title="", new_categories=[])
-      old_post = get_post id
-
-      new_content = old_post["post_content"] if new_content.empty?
-      new_title   = old_post["post_title"]   if new_title.empty?
-
-      if new_categories == []
-
-        # Filtering out terms that are not categories
-        terms = old_post["terms"].select { |t| t["taxonomy"] == "category" }
-
-        # Getting category names
-        cats = terms.map { |c| c["name"] }
-        new_categories = cats
-      end
-
-      @client.editPost(:post_id => id,
-                       :content => {
-                         :post_content => new_content,
-                         :post_title => new_title,
-                         :terms_names => {
-                           :category => new_categories
-                         }
-                       })
-      old_post["link"]
-    end
-
-    def edit_page(id, new_content="", new_title="")
-      old_page = get_page id
-
-      new_content = old_page["post_content"] if new_content.empty?
-      new_title   = old_page["post_title"]   if new_title.empty?
-
-      @client.editPost(:post_id => id,
-                       :filter => {
-                         :post_type => 'page'
-                       },
-                       :content => {
-                         :post_content => new_content,
-                         :post_title => new_title
-                       })
-      old_page["link"]
-    end
-
-    # Returns page with numerical `id`.
-    def get_page id
-      @client.getPost(:post_id => id,
-                      :filter => {
-                        :post_type => 'page'
-                      })
-    end
-
     # Returns `ammount` posts.
     # If `ammount` is zero, will return all posts.
     # FIXME when getting by `ammount` it is ordered by the opposite
@@ -145,6 +112,16 @@ module Quickpress
       ammount = VERY_LARGE_NUMBER if ammount.zero?
 
       @client.getPosts(:filter => { :number => ammount })
+    end
+
+    # Returns page with numerical `id`.
+    # It's a Hash with attributes/values.
+    #
+    def get_page id
+      @client.getPost(:post_id => id,
+                      :filter => {
+                        :post_type => 'page'
+                      })
     end
 
     # Returns `ammount` pages.
@@ -161,7 +138,7 @@ module Quickpress
 
     # Deletes post with numerical `id`.
     def delete_post id
-      @client.deletePost(:post_id => id)
+      @client.delnetePost(:post_id => id)
     end
 
     # Deletes page with numerical `id`.

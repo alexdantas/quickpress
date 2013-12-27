@@ -50,7 +50,9 @@ module Quickpress
 
   @@username   = nil
   @@password   = nil
-  @@connection = nil
+
+  # Actual Wordpress connection Object
+  @@wp = nil
 
   # Supported templating languages and their file extensions.
   @@supported_markup = [["markdown"     , '.md'],
@@ -159,14 +161,14 @@ module Quickpress
       # Will try to connect here.
       # Might take a while.
       CLI::with_status("Connecting...") do
-        @@connection = Wordpress.new(address, @@username, @@password)
+        @@wp = Wordpress.new(address, @@username, @@password)
       end
 
       puts <<-END.remove_starting!
 
-        Title:    #{@@connection.title}
-        Tagline:  #{@@connection.tagline}
-        Url:      #{@@connection.url}
+        Title:    #{@@wp.title}
+        Tagline:  #{@@wp.tagline}
+        Url:      #{@@wp.url}
       END
 
       answer = CLI::ask "Is that right?"
@@ -433,7 +435,7 @@ module Quickpress
 
     # Will show categories in columns of n
     columns = 5
-    table = @@connection.categories.each_slice(columns).to_a
+    table = @@wp.categories.each_slice(columns).to_a
 
     puts
     Thor::Shell::Basic.new.print_table table
@@ -442,7 +444,7 @@ module Quickpress
   # Pretty-prints all options of the Wordpress site.
   def list_options
     Quickpress::startup
-    options = @@connection.get_options
+    options = @@wp.get_options
 
     puts
     Thor::Shell::Basic.new.print_table options
@@ -451,7 +453,7 @@ module Quickpress
   # Pretty-prints all users currently registered on the site.
   def list_users
     Quickpress::startup
-    users = @@connection.get_users
+    users = @@wp.get_users
 
     users.each do |user|
       puts
@@ -469,7 +471,7 @@ module Quickpress
 
     title = $options[:title]
     if title.nil?
-      title = CLI::get "Post Title:"
+      title = CLI::get "Title:"
     end
 
     date = Quickpress::date $options[:date]
@@ -486,7 +488,7 @@ module Quickpress
         puts "Tab-completion works."
         puts "(will create non-existing categories automatically)"
 
-        categories = CLI::tab_complete("Post categories:", @@connection.categories)
+        categories = CLI::tab_complete("Post categories:", @@wp.categories)
       end
 
       cats = []
@@ -494,14 +496,14 @@ module Quickpress
 
       CLI::with_status("Posting...") do
 
-        id, link = @@connection.post(:post_status  => 'publish',
-                                     :post_date    => date,
-                                     :post_title   => title,
-                                     :post_content => html,
-                                     :post_status  => status,
-                                     :terms_names  => {
-                                       :category => cats
-                                     })
+        id, link = @@wp.new_post(:post_status  => 'publish',
+                                 :post_date    => date,
+                                 :post_title   => title,
+                                 :post_content => html,
+                                 :post_status  => status,
+                                 :terms_names  => {
+                                   :category => cats
+                                 })
       end
       puts "Post successful!"
 
@@ -509,12 +511,12 @@ module Quickpress
 
       CLI::with_status("Creating page...") do
 
-        id, link = @@connection.post(:post_status  => 'publish',
-                                     :post_date    => [],
-                                     :post_title   => title,
-                                     :post_content => html,
-                                     :post_status  => status,
-                                     :post_type    => 'page')
+        id, link = @@wp.new_post(:post_status  => 'publish',
+                                 :post_date    => [],
+                                 :post_title   => title,
+                                 :post_content => html,
+                                 :post_status  => status,
+                                 :post_type    => 'page')
       end
       puts "Page created!"
     end
@@ -620,11 +622,11 @@ module Quickpress
     # Get previous content
     old_content = nil
     if what == :post
-      post = @@connection.get_post id
+      post = @@wp.get_post id
 
       old_content = post["post_content"]
     else
-      page = @@connection.get_page id
+      page = @@wp.get_page id
 
       old_content = page["post_content"]
     end
@@ -695,11 +697,13 @@ module Quickpress
       title = CLI::get("New Title:", true)
     end
 
-    date = Quickpress::date($options[:date])
-
+    date   = Quickpress::date $options[:date]
     status = Quickpress::status $options[:status]
 
-    if what == :post
+    case what
+    when :post
+      # Only thing that makes posts different from pages
+      # are categories.
 
       categories = $options[:category]
       if categories.nil?
@@ -711,20 +715,35 @@ module Quickpress
         puts "(will create non-existing categories automatically)"
         puts "(leave empty to keep current categories)"
 
-        categories = CLI::tab_complete("Post categories:", @@connection.categories)
+        categories = CLI::tab_complete("Post categories:", @@wp.categories)
       end
 
       cats = []
       categories.split(',').each { |c| cats << c.lstrip.strip }
 
       CLI::with_status("Editing post...") do
-        link = @@connection.edit_post(id, html, title, categories)
+        link = @@wp.edit_post(:post_id => id,
+                              :content => {
+                                :post_content => html,
+                                :post_title => title,
+                                :post_status => status,
+                                :terms_names => {
+                                  :category => categories
+                                }
+                              })
       end
 
-    elsif what == :page
-
+    when :page
       CLI::with_status("Editing Page...") do
-        link = @@connection.edit_page(id, html, title)
+        link = @@wp.edit_post(:post_id => id,
+                              :filter => {
+                                :post_type => 'page'
+                              },
+                              :content => {
+                                :post_content => html,
+                                :post_title => title,
+                                :post_status => status
+                              })
       end
     end
 
@@ -747,20 +766,15 @@ module Quickpress
       CLI::with_status("Hold on a sec...") do
 
         if what == :post
-          thing = @@connection.get_post id.to_i
+          thing = @@wp.get_post id.to_i
         elsif what == :page
-          thing = @@connection.get_page id.to_i
+          thing = @@wp.get_page id.to_i
         end
 
       end
 
-      if what == :post
-        puts "Will delete the following post:"
-      elsif what == :page
-        puts "Will delete the following page:"
-      end
-
       puts <<-END.remove_starting!
+        Will delete the following #{what}:
 
         ID:      #{thing["post_id"]}
         Title:   #{thing["post_title"]}
@@ -772,6 +786,7 @@ module Quickpress
 
       if not $options[:force]
         answer = CLI::ask("Is that right?")
+
         if not answer
           puts "Alright, then!"
           next
@@ -779,10 +794,9 @@ module Quickpress
       end
 
       CLI::with_status("Deleting...") do
-        if what == :post
-          @@connection.delete_post id.to_i
-        elsif what == :page
-          @@connection.delete_page id.to_i
+        case what
+        when :post then @@wp.delete_post id.to_i
+        when :page then @@wp.delete_page id.to_i
         end
       end
       puts "Deleted!"
@@ -798,12 +812,12 @@ module Quickpress
     elements = nil
     if what == :post
       CLI::with_status("Retrieving posts...") do
-        elements = @@connection.get_posts ammount
+        elements = @@wp.get_posts ammount
       end
 
     elsif what == :page
       CLI::with_status("Retrieving pages...") do
-        elements = @@connection.get_pages ammount
+        elements = @@wp.get_pages ammount
       end
     end
 
@@ -832,7 +846,7 @@ module Quickpress
   # Shows comment count according to their status.
   def status_comments
     Quickpress::startup
-    status = @@connection.get_comment_status
+    status = @@wp.get_comment_status
 
     puts
     Thor::Shell::Basic.new.print_table status
@@ -840,7 +854,7 @@ module Quickpress
 
   def status_categories
     Quickpress::startup
-    status = @@connection.get_category_status
+    status = @@wp.get_category_status
 
     if $options[:"non-empty"]
       status.reject! { |s| s[1].zero? }
@@ -865,7 +879,7 @@ module Quickpress
     Quickpress::authenticate
 
     CLI::with_status("Connecting...") do
-      @@connection ||= Wordpress.new(@@default_site, @@username, @@password)
+      @@wp ||= Wordpress.new(@@default_site, @@username, @@password)
     end
     @started = true
   end
