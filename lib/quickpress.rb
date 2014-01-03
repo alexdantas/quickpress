@@ -527,6 +527,49 @@ module Quickpress
     END
   end
 
+  # Uploads `filename` to the blog.
+  #
+  def new_media filename
+
+    if not File.exists? filename
+      fail "File '#{filename}' doesn't exist"
+    end
+    if File.directory? filename
+      fail "Are you nuts? '#{filename}' is a directory"
+    end
+    if File.stat(filename).size.zero?
+      fail "File '#{filename}' is empty"
+    end
+
+    Quickpress::startup
+
+    id, link, name = nil, nil
+
+    CLI::with_status("Uploading '#{filename}'...") do
+      id, link, name = @@wp.new_media filename
+    end
+
+    puts <<-END.remove_starting!
+      File uploaded!
+      id:   #{id}
+      link: #{link}
+      name: #{name}
+    END
+  end
+
+  # Shows all uploaded items.
+  def list_media
+    Quickpress::startup
+    media = @@wp.get_all_media
+    if media.empty?
+      puts "No items uploaded 'til now."
+      return
+    end
+
+    table = [["ID", "Filename", "Link"]] + media
+    Thor::Shell::Basic.new.print_table table
+  end
+
   # Returns a Time Object according to String `format`.
   #
   # The acceptable date formats are:

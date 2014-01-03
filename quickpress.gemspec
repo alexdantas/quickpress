@@ -28,6 +28,7 @@ END
   spec.add_dependency 'rubypress'
   spec.add_dependency 'tilt'
   spec.add_dependency 'thor'
+  spec.add_dependency 'mimemagic'
 
   spec.add_development_dependency 'rdoc'
   spec.add_development_dependency 'bundler', '~> 1.3'

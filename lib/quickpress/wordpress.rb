@@ -1,4 +1,5 @@
 require 'rubypress'
+require 'mimemagic'
 
 module Quickpress
 
@@ -226,6 +227,46 @@ module Quickpress
 
       status.map { |s| [s["name"], s["count"]] } # all we need
     end
+
+    # Uploads `filename` to Wordpress, returning
+    # it's ID, URL and unique filename inside Wordpress.
+    #
+    def new_media filename
+
+      content = XMLRPC::Base64.new(File.read(filename))
+      if content.encoded.empty?
+        fail "File '#{filename}' is empty"
+      end
+
+      mime = MimeMagic.by_path filename
+      if mime.nil?
+        fail "Unknown MIME type for '#{filename}'"
+      end
+
+      file = @client.uploadFile(:data => {
+                                  :name => File.basename(filename),
+                                  :bits => content,
+                                  :type => mime.type
+                                })
+
+      return file['id'], file['url'], file['file']
+    end
+
+    # Returns all media items on the blog
+    def get_all_media
+      lib = @client.getMediaLibrary
+      return [] if lib.empty?
+
+      # Getting only the fields we're interested on
+      lib.map do |m|
+        [m["attachment_id"], m["title"], m["link"]]
+      end
+    end
+
+    def get_media id
+      @client.getMediaItem(:attachment_id => id)
+    end
+
   end
 end
 

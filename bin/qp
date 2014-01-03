@@ -514,32 +514,62 @@ class QuickpressCLI < Thor
     Quickpress::use_site(id.to_i)
   end
 
-  #  _     _   __  _____    _       __    ___   _     _     ___
-  # | |   | | ( (`  | |    | |\/|  / /\  | |_) | |_/ | | | | |_)
-  # |_|__ |_| _)_)  |_|    |_|  | /_/--\ |_| \ |_| \ \_\_/ |_|
+  #  _      ____  _         ____  _   _     ____
+  # | |\ | | |_  \ \    /  | |_  | | | |   | |_
+  # |_| \| |_|__  \_\/\/   |_|   |_| |_|__ |_|__
   #
-  desc('list-markup',
-       'Show all supported templating languages')
+  desc('new-file [FILENAME]',
+       'Uploads a file to your Wordpress site')
+
+  option('overwrite',
+         :desc    => "overwrites existing file",
+         :aliases => "-o",
+         :type => :boolean)
 
   long_desc(<<-END).remove_starting!
-    Lists all templating languages supported by quickpress,
-    \x5together with their file extensions.
+    Will upload FILENAME to your Wordpress site, showing it's
+    \x5name and link when finished.
 
-    You can use them with the --markup option when creating
-    \x5new posts or pages.
+    This way, you may use it within your posts by using
+    \5it's unique name or linking it directly.
 
-    $ qp new-post --markup asciidoc
+    Note that Wordpress supports only the following file types:
 
+    Images: .jpg .jpeg .png .gif
 
-    Notes:
+    Documents: .pdf .doc .docx .ppt .pptx .pps .ppsx .odt
+    \x5.xls .xlsx
 
-    * When you create a post/page using a file, the markup is implied by the filename extension.
+    Audio: .mp3 .m4a .ogg .wav
+
+    Video: .mp4 .m4v .mov .wmv .avi .mpg .ogv .3gp .3g2
   END
 
-  def list_markup
+  def new_file(filename)
     $options.merge! options
 
-    Quickpress::list_markup
+    Quickpress::new_media filename
+  end
+
+  #  _     _   __  _____    ____  _   _     ____  __
+  # | |   | | ( (`  | |    | |_  | | | |   | |_  ( (`
+  # |_|__ |_| _)_)  |_|    |_|   |_| |_|__ |_|__ _)_)
+  #
+  desc('list-files',
+       'Show all files uploaded on the Wordpress site.')
+
+  long_desc(<<-END).remove_starting!
+    Lists all files that were uploaded and still remain on
+    \x5the Wordpress site.
+
+    Note that if you're making a post that links to a file,
+    \x5you can omit your domain.
+  END
+
+  def list_files
+    $options.merge! options
+
+    Quickpress::list_media
   end
 
   #  _     _   __  _____    __     __   _____  ____  __
@@ -840,9 +870,9 @@ rescue StandardError => e
     exit 666
   end
 
-  $stderr.puts e
-  $stderr.puts e.message
-  $stderr.puts e.backtrace if $options[:debug]
+  $stderr.puts "Error: \"#{e}\""
+  $stderr.puts "Message: #{e.message}" if $options[:debug]
+  $stderr.puts "Backtrace: #{e.backtrace}" if $options[:debug]
   exit 666
 end
 
